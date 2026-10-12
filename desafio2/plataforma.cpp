@@ -1,4 +1,6 @@
 #include "plataforma.h"
+#include <fstream>
+#include <limits>
 
 // constructor
 Plataforma::Plataforma()
@@ -25,8 +27,7 @@ void Plataforma::ampliarCapacidad()
 {
     int nuevaCapacidad = capacidadUsuarios * 2;
 
-    Usuario** nuevoArreglo =
-        new Usuario*[nuevaCapacidad];
+    Usuario** nuevoArreglo = new Usuario*[nuevaCapacidad];
 
     for (int i = 0; i < cantidadUsuarios; i++)
     {
@@ -78,6 +79,17 @@ const Usuario* Plataforma::buscarUsuario(const string& nombre) const
     return nullptr;
 }
 
+// obtener usuario por posicion
+const Usuario* Plataforma::obtenerUsuario(int posicion) const
+{
+    if (posicion < 0 || posicion >= cantidadUsuarios)
+    {
+        return nullptr;
+    }
+
+    return usuarios[posicion];
+}
+
 // consultar cantidad de usuarios
 int Plataforma::getCantidadUsuarios() const
 {
@@ -88,4 +100,100 @@ int Plataforma::getCantidadUsuarios() const
 int Plataforma::getCapacidadUsuarios() const
 {
     return capacidadUsuarios;
+}
+
+// guardar todos los usuarios
+bool Plataforma::guardarUsuarios(const string& ruta) const
+{
+    ofstream archivo(ruta);
+
+    if (!archivo.is_open())
+    {
+        return false;
+    }
+
+    archivo << "UDEABOOK_USUARIOS_V1" << '\n';
+    archivo << cantidadUsuarios << '\n';
+
+    for (int i = 0; i < cantidadUsuarios; i++)
+    {
+        if (!usuarios[i]->guardarEnArchivo(archivo))
+        {
+            return false;
+        }
+    }
+
+    archivo.close();
+
+    return archivo.good();
+}
+
+// cargar todos los usuarios
+bool Plataforma::cargarUsuarios(const string& ruta)
+{
+    ifstream archivo(ruta);
+
+    if (!archivo.is_open())
+    {
+        return false;
+    }
+
+    string encabezado;
+
+    if (!getline(archivo, encabezado))
+    {
+        return false;
+    }
+
+    if (encabezado != "UDEABOOK_USUARIOS_V1")
+    {
+        return false;
+    }
+
+    int totalUsuarios;
+
+    if (!(archivo >> totalUsuarios) || totalUsuarios < 0)
+    {
+        return false;
+    }
+
+    archivo.ignore(numeric_limits<streamsize>::max(), '\n');
+
+    if (!archivo)
+    {
+        return false;
+    }
+
+    // cargar primero en una plataforma temporal
+    Plataforma temporal;
+
+    for (int i = 0; i < totalUsuarios; i++)
+    {
+        Usuario nuevoUsuario;
+
+        if (!nuevoUsuario.cargarDesdeArchivo(archivo))
+        {
+            return false;
+        }
+
+        if (!temporal.agregarUsuario(nuevoUsuario))
+        {
+            return false;
+        }
+    }
+
+    // intercambiar los arreglos y sus contadores
+    Usuario** arregloAnterior = usuarios;
+    int cantidadAnterior = cantidadUsuarios;
+    int capacidadAnterior = capacidadUsuarios;
+
+    usuarios = temporal.usuarios;
+    cantidadUsuarios = temporal.cantidadUsuarios;
+    capacidadUsuarios = temporal.capacidadUsuarios;
+
+    temporal.usuarios = arregloAnterior;
+    temporal.cantidadUsuarios = cantidadAnterior;
+    temporal.capacidadUsuarios = capacidadAnterior;
+
+    return true;
 }

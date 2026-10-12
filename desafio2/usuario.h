@@ -1,8 +1,8 @@
-
 #ifndef USUARIO_H
 #define USUARIO_H
 
 #include <string>
+#include <fstream>
 
 using namespace std;
 
@@ -49,6 +49,10 @@ public:
 
     // validacion de contrasena
     bool verificarContrasena(const string& clave) const;
+
+    // almacenamiento permanente
+    bool guardarEnArchivo(ostream& archivo) const;
+    bool cargarDesdeArchivo(istream& archivo);
 };
 
 #endif

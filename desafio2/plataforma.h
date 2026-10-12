@@ -1,6 +1,6 @@
+
 #ifndef PLATAFORMA_H
 #define PLATAFORMA_H
-
 #include "usuario.h"
 #include <string>
 
@@ -26,9 +26,14 @@ public:
     bool agregarUsuario(const Usuario& usuario);
 
     const Usuario* buscarUsuario(const string& nombre) const;
+    const Usuario* obtenerUsuario(int posicion) const;
 
     int getCantidadUsuarios() const;
     int getCapacidadUsuarios() const;
+
+    bool guardarUsuarios(const string& ruta) const;
+    bool cargarUsuarios(const string& ruta);
 };
 
 #endif
+
