@@ -9,33 +9,25 @@ using namespace std;
 
 int main()
 {
-    cout << "===== Ude@Book =====" << endl;
+    const string rutaUsuarios = "usuarios.txt";
+    const string rutaAmistades = "amistades.txt";
 
     Plataforma plataforma;
 
-    string ruta = "usuarios.txt";
+    ifstream comprobacionUsuarios(rutaUsuarios);
+    bool existenUsuarios = comprobacionUsuarios.is_open();
+    comprobacionUsuarios.close();
 
-    // verificar si ya existe el archivo
-    ifstream comprobacion(ruta);
-
-    bool archivoExiste = comprobacion.is_open();
-
-    comprobacion.close();
-
-    if (archivoExiste)
+    if (existenUsuarios)
     {
-        // cargar los usuarios existentes
-        if (!plataforma.cargarUsuarios(ruta))
+        if (!plataforma.cargarUsuarios(rutaUsuarios))
         {
-            cout << "Error al cargar los usuarios." << endl;
+            cout << "Error al cargar usuarios." << endl;
             return 1;
         }
-
-        cout << "Usuarios cargados desde el archivo." << endl;
     }
     else
     {
-        // crear usuarios iniciales de prueba
         Usuario usuario1("juanito76");
         Usuario usuario2("pedrito89");
 
@@ -54,70 +46,151 @@ int main()
         plataforma.agregarUsuario(usuario2);
         plataforma.agregarUsuario(usuario3);
 
-        // guardar los usuarios iniciales
-        if (!plataforma.guardarUsuarios(ruta))
+        if (!plataforma.guardarUsuarios(rutaUsuarios))
         {
-            cout << "Error al guardar los usuarios." << endl;
+            cout << "Error al crear usuarios.txt." << endl;
             return 1;
         }
-
-        cout << "Archivo inicial creado correctamente." << endl;
     }
 
-    cout << endl;
-    cout << "===== Usuarios registrados =====" << endl;
+    ifstream comprobacionAmistades(rutaAmistades);
+    bool existenAmistades = comprobacionAmistades.is_open();
+    comprobacionAmistades.close();
 
-    for (int i = 0; i < plataforma.getCantidadUsuarios(); i++)
+    if (existenAmistades &&
+        !plataforma.cargarAmistades(rutaAmistades))
     {
-        const Usuario* actual = plataforma.obtenerUsuario(i);
-
-        if (actual != nullptr)
-        {
-            cout << i << ". "
-                 << actual->getNombreUsuario() << endl;
-        }
+        cout << "Error al cargar amistades.txt." << endl;
+        return 1;
     }
 
-    cout << endl;
-    cout << "Cantidad de usuarios: "
+    cout << "===== Ude@Book - Prueba de amistades ====="
+         << endl;
+
+    cout << "Usuarios cargados: "
          << plataforma.getCantidadUsuarios() << endl;
 
-    cout << "Capacidad del arreglo: "
-         << plataforma.getCapacidadUsuarios() << endl;
+    string opcion;
 
-    cout << endl;
-
-    // registrar un nuevo usuario de prueba
-    string nombreNuevo;
-
-    cout << "Ingrese un nuevo nombre de usuario" << endl;
-    cout << "(escriba 0 para salir): ";
-
-    getline(cin, nombreNuevo);
-
-    if (nombreNuevo != "0")
+    do
     {
-        Usuario nuevoUsuario(nombreNuevo);
+        cout << "\n1. Registrar usuario" << endl;
+        cout << "2. Crear amistad (solo prueba tecnica)" << endl;
+        cout << "3. Consultar amistad" << endl;
+        cout << "4. Contar amigos" << endl;
+        cout << "0. Salir" << endl;
+        cout << "Opcion: ";
 
-        if (plataforma.agregarUsuario(nuevoUsuario))
+        getline(cin, opcion);
+
+        if (opcion == "1")
         {
-            if (plataforma.guardarUsuarios(ruta))
+            string nombre;
+
+            cout << "Nombre de usuario: ";
+            getline(cin, nombre);
+
+            Usuario nuevo(nombre);
+
+            if (plataforma.agregarUsuario(nuevo))
             {
-                cout << "Usuario registrado y guardado." << endl;
+                if (plataforma.guardarUsuarios(rutaUsuarios))
+                {
+                    cout << "Usuario registrado y guardado."
+                         << endl;
+                }
+                else
+                {
+                    cout << "Usuario en RAM, pero fallo al guardar."
+                         << endl;
+                }
             }
             else
             {
-                cout << "Error al guardar los cambios." << endl;
+                cout << "Nombre vacio o repetido." << endl;
             }
         }
-        else
+        else if (opcion == "2")
         {
-            cout << "Nombre vacio o usuario duplicado." << endl;
+            string primero;
+            string segundo;
+
+            cout << "Primer usuario: ";
+            getline(cin, primero);
+
+            cout << "Segundo usuario: ";
+            getline(cin, segundo);
+
+            if (plataforma.establecerAmistad(primero, segundo))
+            {
+                if (plataforma.guardarAmistades(rutaAmistades))
+                {
+                    cout << "Amistad mutua creada y guardada."
+                         << endl;
+                }
+                else
+                {
+                    cout << "Amistad en RAM, pero fallo al guardar."
+                         << endl;
+                }
+            }
+            else
+            {
+                cout << "No se puede crear esa amistad."
+                     << endl;
+            }
+        }
+        else if (opcion == "3")
+        {
+            string primero;
+            string segundo;
+
+            cout << "Primer usuario: ";
+            getline(cin, primero);
+
+            cout << "Segundo usuario: ";
+            getline(cin, segundo);
+
+            if (plataforma.buscarUsuario(primero) == nullptr ||
+                plataforma.buscarUsuario(segundo) == nullptr)
+            {
+                cout << "Uno de los usuarios no existe."
+                     << endl;
+            }
+            else if (plataforma.sonAmigos(primero, segundo))
+            {
+                cout << "Si son amigos." << endl;
+            }
+            else
+            {
+                cout << "No son amigos." << endl;
+            }
+        }
+        else if (opcion == "4")
+        {
+            string nombre;
+
+            cout << "Usuario: ";
+            getline(cin, nombre);
+
+            int total = plataforma.contarAmigos(nombre);
+
+            if (total == -1)
+            {
+                cout << "Ese usuario no existe." << endl;
+            }
+            else
+            {
+                cout << "Cantidad de amigos: "
+                     << total << endl;
+            }
+        }
+        else if (opcion != "0")
+        {
+            cout << "Opcion no valida." << endl;
         }
     }
-
-    cout << endl;
-    cout << "Programa finalizado." << endl;
+    while (opcion != "0" && cin);
 
     return 0;
 }
