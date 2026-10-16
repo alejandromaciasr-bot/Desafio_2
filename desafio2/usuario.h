@@ -1,8 +1,9 @@
 #ifndef USUARIO_H
 #define USUARIO_H
 
+#include "album.h"
 #include <string>
-#include <fstream>
+#include <iosfwd>
 
 using namespace std;
 
@@ -19,13 +20,15 @@ private:
     string fechaInscripcion;
 
     int cantidadAmigos;
+    Album* albumes;
     int cantidadAlbumes;
+    int capacidadAlbumes;
+
+    void ampliarAlbumes();
 
 public:
-    // constructores
     Usuario();
     Usuario(const string& nombre);
-
     Usuario(const string& nombre,
             const string& nacimiento,
             const string& email,
@@ -35,7 +38,11 @@ public:
             const string& paisUsuario,
             const string& inscripcion);
 
-    // getters
+    // regla de tres: el usuario administra sus propios albumes
+    Usuario(const Usuario& otro);
+    Usuario& operator=(const Usuario& otro);
+    ~Usuario();
+
     const string& getNombreUsuario() const;
     const string& getFechaNacimiento() const;
     const string& getCorreo() const;
@@ -44,13 +51,16 @@ public:
     const string& getPais() const;
     const string& getFechaInscripcion() const;
 
-    // setters
     void setNombreUsuario(const string& nombre);
-
-    // validacion de contrasena
     bool verificarContrasena(const string& clave) const;
 
-    // almacenamiento permanente
+    // albumes: cambios solo al preparar datos iniciales y dar likes
+    int getCantidadAlbumes() const;
+    const Album* obtenerAlbum(int posicion) const;
+    bool agregarAlbum(const Album& album);
+    void vaciarAlbumes();
+    bool modificarLikeFoto(int posicionAlbum, int posicionFoto, bool darLike);
+
     bool guardarEnArchivo(ostream& archivo) const;
     bool cargarDesdeArchivo(istream& archivo);
 };

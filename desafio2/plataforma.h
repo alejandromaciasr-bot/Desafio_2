@@ -69,6 +69,15 @@ public:
     const Mensaje* obtenerMensaje(int posicion) const;
     int marcarMensajesLeidos(const string& receptor);
 
+    // albumes y fotos (el usuario es dueno de sus albumes)
+    bool agregarAlbumInicial(const string& dueno, const Album& album);
+    bool puedeVerAlbum(const string& visitante, const string& dueno,
+                       int posicionAlbum) const;
+    bool modificarLikeFoto(const string& visitante, const string& dueno,
+                           int posicionAlbum, int posicionFoto, bool darLike);
+    bool guardarAlbumes(const string& ruta) const;
+    bool cargarAlbumes(const string& ruta);
+
     bool guardarMensajes(const string& ruta) const;
     bool cargarMensajes(const string& ruta);
 

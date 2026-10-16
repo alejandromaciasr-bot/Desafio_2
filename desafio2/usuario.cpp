@@ -1,6 +1,6 @@
 #include "usuario.h"
+#include <iostream>
 
-// constructor por defecto
 Usuario::Usuario()
 {
     nombreUsuario = "";
@@ -11,18 +11,17 @@ Usuario::Usuario()
     ciudad = "";
     pais = "";
     fechaInscripcion = "";
-
     cantidadAmigos = 0;
+    albumes = nullptr;
     cantidadAlbumes = 0;
+    capacidadAlbumes = 0;
 }
 
-// constructor con nombre
 Usuario::Usuario(const string& nombre) : Usuario()
 {
     nombreUsuario = nombre;
 }
 
-// constructor con todos los datos basicos
 Usuario::Usuario(const string& nombre,
                  const string& nacimiento,
                  const string& email,
@@ -42,7 +41,64 @@ Usuario::Usuario(const string& nombre,
     fechaInscripcion = inscripcion;
 }
 
-// getters
+Usuario::Usuario(const Usuario& otro) : Usuario()
+{
+    *this = otro;
+}
+
+Usuario& Usuario::operator=(const Usuario& otro)
+{
+    if (this == &otro)
+    {
+        return *this;
+    }
+
+    Album* nuevosAlbumes = nullptr;
+    if (otro.capacidadAlbumes > 0)
+    {
+        nuevosAlbumes = new Album[otro.capacidadAlbumes];
+        for (int i = 0; i < otro.cantidadAlbumes; i++)
+        {
+            nuevosAlbumes[i] = otro.albumes[i];
+        }
+    }
+
+    delete[] albumes;
+    albumes = nuevosAlbumes;
+    cantidadAlbumes = otro.cantidadAlbumes;
+    capacidadAlbumes = otro.capacidadAlbumes;
+
+    nombreUsuario = otro.nombreUsuario;
+    fechaNacimiento = otro.fechaNacimiento;
+    correo = otro.correo;
+    contrasena = otro.contrasena;
+    fotoPerfil = otro.fotoPerfil;
+    ciudad = otro.ciudad;
+    pais = otro.pais;
+    fechaInscripcion = otro.fechaInscripcion;
+    cantidadAmigos = otro.cantidadAmigos;
+    return *this;
+}
+
+Usuario::~Usuario()
+{
+    delete[] albumes;
+}
+
+void Usuario::ampliarAlbumes()
+{
+    int nuevaCapacidad = capacidadAlbumes == 0 ? 2 : capacidadAlbumes * 2;
+    Album* nuevoArreglo = new Album[nuevaCapacidad];
+    for (int i = 0; i < cantidadAlbumes; i++)
+    {
+        nuevoArreglo[i] = albumes[i];
+    }
+
+    delete[] albumes;
+    albumes = nuevoArreglo;
+    capacidadAlbumes = nuevaCapacidad;
+}
+
 const string& Usuario::getNombreUsuario() const
 {
     return nombreUsuario;
@@ -78,19 +134,75 @@ const string& Usuario::getFechaInscripcion() const
     return fechaInscripcion;
 }
 
-// setters
 void Usuario::setNombreUsuario(const string& nombre)
 {
     nombreUsuario = nombre;
 }
 
-// validacion de contrasena
 bool Usuario::verificarContrasena(const string& clave) const
 {
     return contrasena == clave;
 }
 
-// guardar los atributos del usuario
+int Usuario::getCantidadAlbumes() const
+{
+    return cantidadAlbumes;
+}
+
+const Album* Usuario::obtenerAlbum(int posicion) const
+{
+    if (posicion < 0 || posicion >= cantidadAlbumes)
+    {
+        return nullptr;
+    }
+    return &albumes[posicion];
+}
+
+bool Usuario::agregarAlbum(const Album& album)
+{
+    if (album.getNombre().empty() ||
+        !Album::privacidadValida(album.getPrivacidad()))
+    {
+        return false;
+    }
+
+    for (int i = 0; i < cantidadAlbumes; i++)
+    {
+        if (albumes[i].getNombre() == album.getNombre())
+        {
+            return false;
+        }
+    }
+
+    if (cantidadAlbumes == capacidadAlbumes)
+    {
+        ampliarAlbumes();
+    }
+
+    albumes[cantidadAlbumes] = album;
+    cantidadAlbumes++;
+    return true;
+}
+
+void Usuario::vaciarAlbumes()
+{
+    delete[] albumes;
+    albumes = nullptr;
+    cantidadAlbumes = 0;
+    capacidadAlbumes = 0;
+}
+
+bool Usuario::modificarLikeFoto(int posicionAlbum, int posicionFoto,
+                                bool darLike)
+{
+    if (posicionAlbum < 0 || posicionAlbum >= cantidadAlbumes)
+    {
+        return false;
+    }
+    return albumes[posicionAlbum].modificarLike(posicionFoto, darLike);
+}
+
+// mantenemos el formato V1 de los datos basicos de usuario
 bool Usuario::guardarEnArchivo(ostream& archivo) const
 {
     archivo << nombreUsuario << '\n';
@@ -101,11 +213,9 @@ bool Usuario::guardarEnArchivo(ostream& archivo) const
     archivo << ciudad << '\n';
     archivo << pais << '\n';
     archivo << fechaInscripcion << '\n';
-
     return archivo.good();
 }
 
-// cargar los atributos del usuario
 bool Usuario::cargarDesdeArchivo(istream& archivo)
 {
     string nombre;
@@ -124,12 +234,7 @@ bool Usuario::cargarDesdeArchivo(istream& archivo)
         !getline(archivo, clave) ||
         !getline(archivo, ciudadUsuario) ||
         !getline(archivo, paisUsuario) ||
-        !getline(archivo, inscripcion))
-    {
-        return false;
-    }
-
-    if (nombre.empty())
+        !getline(archivo, inscripcion) || nombre.empty())
     {
         return false;
     }
@@ -142,9 +247,11 @@ bool Usuario::cargarDesdeArchivo(istream& archivo)
     ciudad = ciudadUsuario;
     pais = paisUsuario;
     fechaInscripcion = inscripcion;
-
     cantidadAmigos = 0;
-    cantidadAlbumes = 0;
 
+    delete[] albumes;
+    albumes = nullptr;
+    cantidadAlbumes = 0;
+    capacidadAlbumes = 0;
     return true;
 }

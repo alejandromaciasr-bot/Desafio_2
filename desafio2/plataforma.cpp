@@ -863,3 +863,165 @@ int Plataforma::generarSugerencias(const string& nombre, int k,
     delete[] comunes;
     return total;
 }
+
+// anadir datos iniciales de prueba, nunca desde el menu del usuario
+bool Plataforma::agregarAlbumInicial(const string& dueno, const Album& album)
+{
+    int indice = buscarIndiceUsuario(dueno);
+    if (indice == -1)
+    {
+        return false;
+    }
+    return usuarios[indice]->agregarAlbum(album);
+}
+
+// comprobar las reglas de privacidad del album
+bool Plataforma::puedeVerAlbum(const string& visitante,
+                               const string& dueno,
+                               int posicionAlbum) const
+{
+    int indiceVisitante = buscarIndiceUsuario(visitante);
+    int indiceDueno = buscarIndiceUsuario(dueno);
+
+    if (indiceVisitante == -1 || indiceDueno == -1)
+    {
+        return false;
+    }
+
+    const Album* album = usuarios[indiceDueno]->obtenerAlbum(posicionAlbum);
+    if (album == nullptr)
+    {
+        return false;
+    }
+    if (visitante == dueno)
+    {
+        return true;
+    }
+    if (album->getPrivacidad() == "publico")
+    {
+        return true;
+    }
+    if (album->getPrivacidad() == "amigos")
+    {
+        return matrizAmistades[indiceVisitante * capacidadUsuarios + indiceDueno];
+    }
+    return false;
+}
+
+bool Plataforma::modificarLikeFoto(const string& visitante,
+                                   const string& dueno,
+                                   int posicionAlbum, int posicionFoto,
+                                   bool darLike)
+{
+    if (!puedeVerAlbum(visitante, dueno, posicionAlbum))
+    {
+        return false;
+    }
+    int indiceDueno = buscarIndiceUsuario(dueno);
+    return usuarios[indiceDueno]->modificarLikeFoto(
+        posicionAlbum, posicionFoto, darLike);
+}
+
+// guardar albumes y fotos, vinculados por nombre del usuario propietario
+bool Plataforma::guardarAlbumes(const string& ruta) const
+{
+    ofstream archivo(ruta);
+    if (!archivo.is_open())
+    {
+        return false;
+    }
+
+    archivo << "UDEABOOK_ALBUMES_V1" << '\n';
+    archivo << cantidadUsuarios << '\n';
+    for (int i = 0; i < cantidadUsuarios; i++)
+    {
+        archivo << usuarios[i]->getNombreUsuario() << '\n';
+        archivo << usuarios[i]->getCantidadAlbumes() << '\n';
+
+        for (int j = 0; j < usuarios[i]->getCantidadAlbumes(); j++)
+        {
+            if (!usuarios[i]->obtenerAlbum(j)->guardarEnArchivo(archivo))
+            {
+                return false;
+            }
+        }
+    }
+    archivo.close();
+    return archivo.good();
+}
+
+// reconstruir los albumes en copias; solo reemplazar al validar todo el archivo
+bool Plataforma::cargarAlbumes(const string& ruta)
+{
+    ifstream archivo(ruta);
+    if (!archivo.is_open())
+    {
+        return false;
+    }
+
+    string encabezado;
+    int totalUsuarios;
+    if (!getline(archivo, encabezado) ||
+        encabezado != "UDEABOOK_ALBUMES_V1" ||
+        !(archivo >> totalUsuarios) || totalUsuarios != cantidadUsuarios)
+    {
+        return false;
+    }
+    archivo.ignore(numeric_limits<streamsize>::max(), '\n');
+    if (!archivo)
+    {
+        return false;
+    }
+
+    Usuario** copias = new Usuario*[cantidadUsuarios]();
+    bool correcto = true;
+
+    for (int i = 0; i < cantidadUsuarios && correcto; i++)
+    {
+        copias[i] = new Usuario(*usuarios[i]);
+        copias[i]->vaciarAlbumes();
+
+        string dueno;
+        int cantidad;
+        if (!getline(archivo, dueno) ||
+            !(archivo >> cantidad) || cantidad < 0 ||
+            dueno != usuarios[i]->getNombreUsuario())
+        {
+            correcto = false;
+            break;
+        }
+        archivo.ignore(numeric_limits<streamsize>::max(), '\n');
+        if (!archivo)
+        {
+            correcto = false;
+            break;
+        }
+
+        for (int j = 0; j < cantidad && correcto; j++)
+        {
+            Album nuevoAlbum;
+            if (!nuevoAlbum.cargarDesdeArchivo(archivo) ||
+                !copias[i]->agregarAlbum(nuevoAlbum))
+            {
+                correcto = false;
+            }
+        }
+    }
+
+    if (correcto)
+    {
+        for (int i = 0; i < cantidadUsuarios; i++)
+        {
+            delete usuarios[i];
+            usuarios[i] = copias[i];
+            copias[i] = nullptr;
+        }
+    }
+
+    for (int i = 0; i < cantidadUsuarios; i++)
+    {
+        delete copias[i];
+    }
+    delete[] copias;
+    return correcto;
+}
