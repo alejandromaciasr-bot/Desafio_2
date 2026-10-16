@@ -57,6 +57,12 @@ public:
     bool aceptarSolicitud(const string& receptor, const string& emisor);
     bool rechazarSolicitud(const string& receptor, const string& emisor);
 
+    // calcular hasta k sugerencias ordenadas por amigos en comun
+    // indices y coincidencias apuntan a arreglos con al menos k posiciones
+    // devuelve -1 si los parametros son incorrectos
+    int generarSugerencias(const string& nombre, int k,
+                           int* indices, int* coincidencias) const;
+
     bool enviarMensaje(const string& emisor, const string& receptor,
                        const string& texto);
     int getCantidadMensajes() const;

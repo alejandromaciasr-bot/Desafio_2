@@ -775,3 +775,91 @@ bool Plataforma::cargarMensajes(const string& ruta)
     capacidadMensajes = nuevaCapacidad;
     return true;
 }
+
+// sugerir amigos de amigos, sin contenedores ni ordenamiento stl
+int Plataforma::generarSugerencias(const string& nombre, int k,
+                                   int* indices, int* coincidencias) const
+{
+    int usuario = buscarIndiceUsuario(nombre);
+
+    if (usuario == -1 || k < 1 || k > 20 ||
+        indices == nullptr || coincidencias == nullptr)
+    {
+        return -1;
+    }
+
+    // contar amigos en comun mediante la matriz de adyacencia
+    int* comunes = new int[cantidadUsuarios]();
+
+    for (int amigo = 0; amigo < cantidadUsuarios; amigo++)
+    {
+        if (matrizAmistades[usuario * capacidadUsuarios + amigo])
+        {
+            for (int candidato = 0; candidato < cantidadUsuarios; candidato++)
+            {
+                if (matrizAmistades[amigo * capacidadUsuarios + candidato])
+                {
+                    comunes[candidato]++;
+                }
+            }
+        }
+    }
+
+    // guardar solo los mejores k en arreglos propios
+    int total = 0;
+
+    for (int candidato = 0; candidato < cantidadUsuarios; candidato++)
+    {
+        if (candidato == usuario || comunes[candidato] == 0 ||
+            matrizAmistades[usuario * capacidadUsuarios + candidato])
+        {
+            continue;
+        }
+
+        const string& nombreCandidato =
+            usuarios[candidato]->getNombreUsuario();
+
+        // no sugerir personas con una solicitud pendiente entre ambos
+        if (buscarIndiceSolicitud(nombre, nombreCandidato) != -1 ||
+            buscarIndiceSolicitud(nombreCandidato, nombre) != -1)
+        {
+            continue;
+        }
+
+        // insercion manual: mas coincidencias primero; empate alfabetico
+        int posicion = 0;
+
+        while (posicion < total)
+        {
+            if (comunes[candidato] > coincidencias[posicion] ||
+                (comunes[candidato] == coincidencias[posicion] &&
+                 nombreCandidato <
+                     usuarios[indices[posicion]]->getNombreUsuario()))
+            {
+                break;
+            }
+
+            posicion++;
+        }
+
+        if (posicion < k)
+        {
+            if (total < k)
+            {
+                total++;
+            }
+
+            for (int i = total - 1; i > posicion; i--)
+            {
+                indices[i] = indices[i - 1];
+                coincidencias[i] = coincidencias[i - 1];
+            }
+
+            indices[posicion] = candidato;
+            coincidencias[posicion] = comunes[candidato];
+        }
+    }
+
+    delete[] comunes;
+    return total;
+}

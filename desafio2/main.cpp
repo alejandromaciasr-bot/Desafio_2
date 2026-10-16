@@ -6,6 +6,34 @@
 
 using namespace std;
 
+// convertir a entero pequeno sin excepciones ni librerias adicionales
+static bool convertirNumeroHasta20(const string& texto, int& numero)
+{
+    if (texto.empty())
+    {
+        return false;
+    }
+
+    numero = 0;
+
+    for (int i = 0; i < static_cast<int>(texto.size()); i++)
+    {
+        if (texto[i] < '0' || texto[i] > '9')
+        {
+            return false;
+        }
+
+        numero = numero * 10 + (texto[i] - '0');
+
+        if (numero > 20)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 int main()
 {
     const string rutaUsuarios = "usuarios.txt";
@@ -105,7 +133,7 @@ int main()
         return 1;
     }
 
-    cout << "===== Ude@Book - Mensajes y amistades =====" << endl;
+    cout << "===== Ude@Book - Mensajes y sugerencias =====" << endl;
     cout << "Usuarios cargados: " << plataforma.getCantidadUsuarios() << endl;
 
     string opcion;
@@ -123,6 +151,7 @@ int main()
         cout << "10. Leer nuevos mensajes" << endl;
         cout << "11. Buscar mensajes recibidos por fechas" << endl;
         cout << "12. Ver mensajes enviados" << endl;
+        cout << "13. Ver sugerencias de amistad" << endl;
         cout << "0. Salir" << endl;
         cout << "Opcion: ";
         getline(cin, opcion);
@@ -430,6 +459,99 @@ int main()
                     }
                 }
                 cout << "Mensajes enviados: " << total << endl;
+            }
+        }
+        else if (opcion == "13")
+        {
+            string nombre;
+            string entradaK;
+            int k = 0;
+
+            cout << "Usuario que consulta: ";
+            getline(cin, nombre);
+            cout << "Cuantas sugerencias desea (1 a 20): ";
+            getline(cin, entradaK);
+
+            if (!convertirNumeroHasta20(entradaK, k) || k < 1)
+            {
+                cout << "K debe ser un entero de 1 a 20." << endl;
+            }
+            else if (plataforma.buscarUsuario(nombre) == nullptr)
+            {
+                cout << "Ese usuario no existe." << endl;
+            }
+            else
+            {
+                // dos arreglos dinamicos para resultados y coincidencias
+                int* indices = new int[k];
+                int* coincidencias = new int[k];
+
+                int total = plataforma.generarSugerencias(
+                    nombre, k, indices, coincidencias);
+
+                if (total <= 0)
+                {
+                    cout << "No hay sugerencias disponibles." << endl;
+                }
+                else
+                {
+                    cout << "Sugerencias encontradas: " << total << endl;
+
+                    for (int i = 0; i < total; i++)
+                    {
+                        const Usuario* sugerido =
+                            plataforma.obtenerUsuario(indices[i]);
+
+                        cout << i << ". " << sugerido->getNombreUsuario()
+                             << " - amigos en comun: "
+                             << coincidencias[i] << endl;
+                    }
+
+                    string respuesta;
+                    cout << "Desea enviar solicitud a un sugerido (s/n): ";
+                    getline(cin, respuesta);
+
+                    if (respuesta == "s" || respuesta == "S")
+                    {
+                        string entradaPosicion;
+                        int posicion = 0;
+
+                        cout << "Numero del sugerido: ";
+                        getline(cin, entradaPosicion);
+
+                        if (!convertirNumeroHasta20(entradaPosicion, posicion) ||
+                            posicion >= total)
+                        {
+                            cout << "Posicion no valida." << endl;
+                        }
+                        else
+                        {
+                            const Usuario* sugerido =
+                                plataforma.obtenerUsuario(indices[posicion]);
+
+                            if (plataforma.enviarSolicitud(
+                                    nombre, sugerido->getNombreUsuario()))
+                            {
+                                if (plataforma.guardarSolicitudes(rutaSolicitudes))
+                                {
+                                    cout << "Solicitud enviada y guardada." << endl;
+                                }
+                                else
+                                {
+                                    cout << "Solicitud creada en RAM, pero no se guardo."
+                                         << endl;
+                                }
+                            }
+                            else
+                            {
+                                cout << "No se pudo enviar la solicitud." << endl;
+                            }
+                        }
+                    }
+                }
+
+                delete[] indices;
+                delete[] coincidencias;
             }
         }
         else if (opcion != "0")
