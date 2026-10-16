@@ -7,11 +7,13 @@ Plataforma::Plataforma()
 {
     cantidadUsuarios = 0;
     capacidadUsuarios = 2;
+    cantidadSolicitudes = 0;
+    capacidadSolicitudes = 2;
 
     usuarios = new Usuario*[capacidadUsuarios];
-
     matrizAmistades =
         new bool[capacidadUsuarios * capacidadUsuarios]();
+    solicitudes = new SolicitudAmistad[capacidadSolicitudes];
 }
 
 // destructor
@@ -24,18 +26,15 @@ Plataforma::~Plataforma()
 
     delete[] usuarios;
     delete[] matrizAmistades;
+    delete[] solicitudes;
 }
 
-// ampliar los arreglos dinamicos
+// ampliar el arreglo de usuarios y la matriz
 void Plataforma::ampliarCapacidad()
 {
     int nuevaCapacidad = capacidadUsuarios * 2;
-
-    Usuario** nuevoArreglo =
-        new Usuario*[nuevaCapacidad];
-
-    bool* nuevaMatriz =
-        new bool[nuevaCapacidad * nuevaCapacidad]();
+    Usuario** nuevoArreglo = new Usuario*[nuevaCapacidad];
+    bool* nuevaMatriz = new bool[nuevaCapacidad * nuevaCapacidad]();
 
     for (int i = 0; i < cantidadUsuarios; i++)
     {
@@ -59,7 +58,36 @@ void Plataforma::ampliarCapacidad()
     capacidadUsuarios = nuevaCapacidad;
 }
 
-// buscar la posicion de un usuario
+// ampliar el arreglo de solicitudes
+void Plataforma::ampliarCapacidadSolicitudes()
+{
+    int nuevaCapacidad = capacidadSolicitudes * 2;
+    SolicitudAmistad* nuevoArreglo =
+        new SolicitudAmistad[nuevaCapacidad];
+
+    for (int i = 0; i < cantidadSolicitudes; i++)
+    {
+        nuevoArreglo[i] = solicitudes[i];
+    }
+
+    delete[] solicitudes;
+    solicitudes = nuevoArreglo;
+    capacidadSolicitudes = nuevaCapacidad;
+}
+
+// eliminar una solicitud desplazando las restantes
+void Plataforma::eliminarSolicitud(int posicion)
+{
+    for (int i = posicion; i < cantidadSolicitudes - 1; i++)
+    {
+        solicitudes[i] = solicitudes[i + 1];
+    }
+
+    cantidadSolicitudes--;
+    solicitudes[cantidadSolicitudes] = SolicitudAmistad();
+}
+
+// buscar indice de un usuario
 int Plataforma::buscarIndiceUsuario(const string& nombre) const
 {
     for (int i = 0; i < cantidadUsuarios; i++)
@@ -73,15 +101,27 @@ int Plataforma::buscarIndiceUsuario(const string& nombre) const
     return -1;
 }
 
-// insertar un usuario sin duplicar nombres
-bool Plataforma::agregarUsuario(const Usuario& usuario)
+// buscar indice de una solicitud dirigida
+int Plataforma::buscarIndiceSolicitud(const string& emisor,
+                                      const string& receptor) const
 {
-    if (usuario.getNombreUsuario().empty())
+    for (int i = 0; i < cantidadSolicitudes; i++)
     {
-        return false;
+        if (solicitudes[i].getEmisor() == emisor &&
+            solicitudes[i].getReceptor() == receptor)
+        {
+            return i;
+        }
     }
 
-    if (buscarIndiceUsuario(usuario.getNombreUsuario()) != -1)
+    return -1;
+}
+
+// insertar usuario
+bool Plataforma::agregarUsuario(const Usuario& usuario)
+{
+    if (usuario.getNombreUsuario().empty() ||
+        buscarIndiceUsuario(usuario.getNombreUsuario()) != -1)
     {
         return false;
     }
@@ -93,31 +133,25 @@ bool Plataforma::agregarUsuario(const Usuario& usuario)
 
     usuarios[cantidadUsuarios] = new Usuario(usuario);
     cantidadUsuarios++;
-
     return true;
 }
 
-// buscar un usuario por su nombre
 const Usuario* Plataforma::buscarUsuario(const string& nombre) const
 {
     int indice = buscarIndiceUsuario(nombre);
-
     if (indice == -1)
     {
         return nullptr;
     }
-
     return usuarios[indice];
 }
 
-// consultar un usuario segun su posicion
 const Usuario* Plataforma::obtenerUsuario(int posicion) const
 {
     if (posicion < 0 || posicion >= cantidadUsuarios)
     {
         return nullptr;
     }
-
     return usuarios[posicion];
 }
 
@@ -131,31 +165,24 @@ int Plataforma::getCapacidadUsuarios() const
     return capacidadUsuarios;
 }
 
-// crear una amistad reciproca
-// por ahora solo para pruebas
+// crear amistad solo desde la aceptacion de una solicitud
 bool Plataforma::establecerAmistad(const string& usuario1,
                                    const string& usuario2)
 {
     int i = buscarIndiceUsuario(usuario1);
     int j = buscarIndiceUsuario(usuario2);
 
-    if (i == -1 || j == -1 || i == j)
-    {
-        return false;
-    }
-
-    if (matrizAmistades[i * capacidadUsuarios + j])
+    if (i == -1 || j == -1 || i == j ||
+        matrizAmistades[i * capacidadUsuarios + j])
     {
         return false;
     }
 
     matrizAmistades[i * capacidadUsuarios + j] = true;
     matrizAmistades[j * capacidadUsuarios + i] = true;
-
     return true;
 }
 
-// consultar si dos usuarios son amigos
 bool Plataforma::sonAmigos(const string& usuario1,
                            const string& usuario2) const
 {
@@ -170,18 +197,15 @@ bool Plataforma::sonAmigos(const string& usuario1,
     return matrizAmistades[i * capacidadUsuarios + j];
 }
 
-// contar amigos de un usuario
 int Plataforma::contarAmigos(const string& nombre) const
 {
     int indice = buscarIndiceUsuario(nombre);
-
     if (indice == -1)
     {
         return -1;
     }
 
     int total = 0;
-
     for (int j = 0; j < cantidadUsuarios; j++)
     {
         if (matrizAmistades[indice * capacidadUsuarios + j])
@@ -189,15 +213,104 @@ int Plataforma::contarAmigos(const string& nombre) const
             total++;
         }
     }
-
     return total;
 }
 
-// guardar los datos basicos de los usuarios
+// crear solicitud pendiente
+bool Plataforma::enviarSolicitud(const string& emisor,
+                                 const string& receptor)
+{
+    if (emisor.empty() || receptor.empty() || emisor == receptor ||
+        buscarIndiceUsuario(emisor) == -1 ||
+        buscarIndiceUsuario(receptor) == -1 ||
+        sonAmigos(emisor, receptor) ||
+        buscarIndiceSolicitud(emisor, receptor) != -1 ||
+        buscarIndiceSolicitud(receptor, emisor) != -1)
+    {
+        return false;
+    }
+
+    if (cantidadSolicitudes == capacidadSolicitudes)
+    {
+        ampliarCapacidadSolicitudes();
+    }
+
+    solicitudes[cantidadSolicitudes] = SolicitudAmistad(emisor, receptor);
+    cantidadSolicitudes++;
+    return true;
+}
+
+int Plataforma::contarSolicitudesRecibidas(const string& receptor) const
+{
+    if (buscarIndiceUsuario(receptor) == -1)
+    {
+        return -1;
+    }
+
+    int total = 0;
+    for (int i = 0; i < cantidadSolicitudes; i++)
+    {
+        if (solicitudes[i].getReceptor() == receptor)
+        {
+            total++;
+        }
+    }
+    return total;
+}
+
+const SolicitudAmistad* Plataforma::obtenerSolicitudRecibida(
+    const string& receptor, int posicion) const
+{
+    if (posicion < 0 || buscarIndiceUsuario(receptor) == -1)
+    {
+        return nullptr;
+    }
+
+    int encontrada = 0;
+    for (int i = 0; i < cantidadSolicitudes; i++)
+    {
+        if (solicitudes[i].getReceptor() == receptor)
+        {
+            if (encontrada == posicion)
+            {
+                return &solicitudes[i];
+            }
+            encontrada++;
+        }
+    }
+    return nullptr;
+}
+
+bool Plataforma::aceptarSolicitud(const string& receptor,
+                                  const string& emisor)
+{
+    int posicion = buscarIndiceSolicitud(emisor, receptor);
+    if (posicion == -1 || !establecerAmistad(emisor, receptor))
+    {
+        return false;
+    }
+
+    eliminarSolicitud(posicion);
+    return true;
+}
+
+bool Plataforma::rechazarSolicitud(const string& receptor,
+                                   const string& emisor)
+{
+    int posicion = buscarIndiceSolicitud(emisor, receptor);
+    if (posicion == -1)
+    {
+        return false;
+    }
+
+    eliminarSolicitud(posicion);
+    return true;
+}
+
+// guardar datos basicos de los usuarios
 bool Plataforma::guardarUsuarios(const string& ruta) const
 {
     ofstream archivo(ruta);
-
     if (!archivo.is_open())
     {
         return false;
@@ -205,7 +318,6 @@ bool Plataforma::guardarUsuarios(const string& ruta) const
 
     archivo << "UDEABOOK_USUARIOS_V1" << '\n';
     archivo << cantidadUsuarios << '\n';
-
     for (int i = 0; i < cantidadUsuarios; i++)
     {
         if (!usuarios[i]->guardarEnArchivo(archivo))
@@ -215,22 +327,18 @@ bool Plataforma::guardarUsuarios(const string& ruta) const
     }
 
     archivo.close();
-
     return archivo.good();
 }
 
-// cargar los usuarios antes de cargar las amistades
 bool Plataforma::cargarUsuarios(const string& ruta)
 {
     ifstream archivo(ruta);
-
     if (!archivo.is_open())
     {
         return false;
     }
 
     string encabezado;
-
     if (!getline(archivo, encabezado) ||
         encabezado != "UDEABOOK_USUARIOS_V1")
     {
@@ -238,25 +346,20 @@ bool Plataforma::cargarUsuarios(const string& ruta)
     }
 
     int totalUsuarios;
-
     if (!(archivo >> totalUsuarios) || totalUsuarios < 0)
     {
         return false;
     }
-
     archivo.ignore(numeric_limits<streamsize>::max(), '\n');
-
     if (!archivo)
     {
         return false;
     }
 
     Plataforma temporal;
-
     for (int i = 0; i < totalUsuarios; i++)
     {
         Usuario nuevoUsuario;
-
         if (!nuevoUsuario.cargarDesdeArchivo(archivo) ||
             !temporal.agregarUsuario(nuevoUsuario))
         {
@@ -264,38 +367,41 @@ bool Plataforma::cargarUsuarios(const string& ruta)
         }
     }
 
-    // intercambiar los arreglos y sus matrices
     Usuario** usuariosAnteriores = usuarios;
     bool* matrizAnterior = matrizAmistades;
-
+    SolicitudAmistad* solicitudesAnteriores = solicitudes;
     int cantidadAnterior = cantidadUsuarios;
     int capacidadAnterior = capacidadUsuarios;
+    int cantidadSolicitudesAnterior = cantidadSolicitudes;
+    int capacidadSolicitudesAnterior = capacidadSolicitudes;
 
     usuarios = temporal.usuarios;
     matrizAmistades = temporal.matrizAmistades;
+    solicitudes = temporal.solicitudes;
     cantidadUsuarios = temporal.cantidadUsuarios;
     capacidadUsuarios = temporal.capacidadUsuarios;
+    cantidadSolicitudes = temporal.cantidadSolicitudes;
+    capacidadSolicitudes = temporal.capacidadSolicitudes;
 
     temporal.usuarios = usuariosAnteriores;
     temporal.matrizAmistades = matrizAnterior;
+    temporal.solicitudes = solicitudesAnteriores;
     temporal.cantidadUsuarios = cantidadAnterior;
     temporal.capacidadUsuarios = capacidadAnterior;
-
+    temporal.cantidadSolicitudes = cantidadSolicitudesAnterior;
+    temporal.capacidadSolicitudes = capacidadSolicitudesAnterior;
     return true;
 }
 
-// guardar cada amistad una sola vez
 bool Plataforma::guardarAmistades(const string& ruta) const
 {
     ofstream archivo(ruta);
-
     if (!archivo.is_open())
     {
         return false;
     }
 
     int totalRelaciones = 0;
-
     for (int i = 0; i < cantidadUsuarios; i++)
     {
         for (int j = i + 1; j < cantidadUsuarios; j++)
@@ -323,22 +429,18 @@ bool Plataforma::guardarAmistades(const string& ruta) const
     }
 
     archivo.close();
-
     return archivo.good();
 }
 
-// cargar todas las amistades desde el archivo
 bool Plataforma::cargarAmistades(const string& ruta)
 {
     ifstream archivo(ruta);
-
     if (!archivo.is_open())
     {
         return false;
     }
 
     string encabezado;
-
     if (!getline(archivo, encabezado) ||
         encabezado != "UDEABOOK_AMISTADES_V1")
     {
@@ -346,14 +448,11 @@ bool Plataforma::cargarAmistades(const string& ruta)
     }
 
     int totalRelaciones;
-
     if (!(archivo >> totalRelaciones) || totalRelaciones < 0)
     {
         return false;
     }
-
     archivo.ignore(numeric_limits<streamsize>::max(), '\n');
-
     if (!archivo)
     {
         return false;
@@ -366,9 +465,7 @@ bool Plataforma::cargarAmistades(const string& ruta)
     {
         string nombre1;
         string nombre2;
-
-        if (!getline(archivo, nombre1) ||
-            !getline(archivo, nombre2))
+        if (!getline(archivo, nombre1) || !getline(archivo, nombre2))
         {
             delete[] nuevaMatriz;
             return false;
@@ -376,7 +473,6 @@ bool Plataforma::cargarAmistades(const string& ruta)
 
         int i = buscarIndiceUsuario(nombre1);
         int j = buscarIndiceUsuario(nombre2);
-
         if (i == -1 || j == -1 || i == j ||
             nuevaMatriz[i * capacidadUsuarios + j])
         {
@@ -390,6 +486,96 @@ bool Plataforma::cargarAmistades(const string& ruta)
 
     delete[] matrizAmistades;
     matrizAmistades = nuevaMatriz;
+    return true;
+}
 
+bool Plataforma::guardarSolicitudes(const string& ruta) const
+{
+    ofstream archivo(ruta);
+    if (!archivo.is_open())
+    {
+        return false;
+    }
+
+    archivo << "UDEABOOK_SOLICITUDES_V1" << '\n';
+    archivo << cantidadSolicitudes << '\n';
+    for (int i = 0; i < cantidadSolicitudes; i++)
+    {
+        archivo << solicitudes[i].getEmisor() << '\n';
+        archivo << solicitudes[i].getReceptor() << '\n';
+    }
+
+    archivo.close();
+    return archivo.good();
+}
+
+bool Plataforma::cargarSolicitudes(const string& ruta)
+{
+    ifstream archivo(ruta);
+    if (!archivo.is_open())
+    {
+        return false;
+    }
+
+    string encabezado;
+    if (!getline(archivo, encabezado) ||
+        encabezado != "UDEABOOK_SOLICITUDES_V1")
+    {
+        return false;
+    }
+
+    int totalSolicitudes;
+    if (!(archivo >> totalSolicitudes) || totalSolicitudes < 0)
+    {
+        return false;
+    }
+    archivo.ignore(numeric_limits<streamsize>::max(), '\n');
+    if (!archivo)
+    {
+        return false;
+    }
+
+    int nuevaCapacidad = (totalSolicitudes > 2) ? totalSolicitudes : 2;
+    SolicitudAmistad* nuevasSolicitudes =
+        new SolicitudAmistad[nuevaCapacidad];
+
+    for (int i = 0; i < totalSolicitudes; i++)
+    {
+        string emisor;
+        string receptor;
+        if (!getline(archivo, emisor) || !getline(archivo, receptor))
+        {
+            delete[] nuevasSolicitudes;
+            return false;
+        }
+
+        if (emisor.empty() || receptor.empty() || emisor == receptor ||
+            buscarIndiceUsuario(emisor) == -1 ||
+            buscarIndiceUsuario(receptor) == -1 ||
+            sonAmigos(emisor, receptor))
+        {
+            delete[] nuevasSolicitudes;
+            return false;
+        }
+
+        for (int j = 0; j < i; j++)
+        {
+            if ((nuevasSolicitudes[j].getEmisor() == emisor &&
+                 nuevasSolicitudes[j].getReceptor() == receptor) ||
+                (nuevasSolicitudes[j].getEmisor() == receptor &&
+                 nuevasSolicitudes[j].getReceptor() == emisor))
+            {
+                delete[] nuevasSolicitudes;
+                return false;
+            }
+        }
+
+        nuevasSolicitudes[i] = SolicitudAmistad(emisor, receptor);
+    }
+
+    delete[] solicitudes;
+    solicitudes = nuevasSolicitudes;
+    cantidadSolicitudes = totalSolicitudes;
+    capacidadSolicitudes = nuevaCapacidad;
     return true;
 }

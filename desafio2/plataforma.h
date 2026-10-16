@@ -2,6 +2,7 @@
 #define PLATAFORMA_H
 
 #include "usuario.h"
+#include "solicitudamistad.h"
 #include <string>
 
 using namespace std;
@@ -11,12 +12,21 @@ class Plataforma
 private:
     Usuario** usuarios;
     bool* matrizAmistades;
+    SolicitudAmistad* solicitudes;
 
     int cantidadUsuarios;
     int capacidadUsuarios;
+    int cantidadSolicitudes;
+    int capacidadSolicitudes;
 
     void ampliarCapacidad();
+    void ampliarCapacidadSolicitudes();
+    void eliminarSolicitud(int posicion);
     int buscarIndiceUsuario(const string& nombre) const;
+    int buscarIndiceSolicitud(const string& emisor,
+                              const string& receptor) const;
+    bool establecerAmistad(const string& usuario1,
+                           const string& usuario2);
 
 public:
     Plataforma();
@@ -26,28 +36,28 @@ public:
     Plataforma& operator=(const Plataforma& otra) = delete;
 
     bool agregarUsuario(const Usuario& usuario);
-
     const Usuario* buscarUsuario(const string& nombre) const;
     const Usuario* obtenerUsuario(int posicion) const;
-
     int getCantidadUsuarios() const;
     int getCapacidadUsuarios() const;
 
-    // operaciones de amistad
-    bool establecerAmistad(const string& usuario1,
-                           const string& usuario2);
-
     bool sonAmigos(const string& usuario1,
                    const string& usuario2) const;
-
     int contarAmigos(const string& nombre) const;
 
-    // almacenamiento permanente
+    bool enviarSolicitud(const string& emisor, const string& receptor);
+    int contarSolicitudesRecibidas(const string& receptor) const;
+    const SolicitudAmistad* obtenerSolicitudRecibida(
+        const string& receptor, int posicion) const;
+    bool aceptarSolicitud(const string& receptor, const string& emisor);
+    bool rechazarSolicitud(const string& receptor, const string& emisor);
+
     bool guardarUsuarios(const string& ruta) const;
     bool cargarUsuarios(const string& ruta);
-
     bool guardarAmistades(const string& ruta) const;
     bool cargarAmistades(const string& ruta);
+    bool guardarSolicitudes(const string& ruta) const;
+    bool cargarSolicitudes(const string& ruta);
 };
 
 #endif
