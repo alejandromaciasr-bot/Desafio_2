@@ -3,6 +3,7 @@
 
 #include "usuario.h"
 #include "solicitudamistad.h"
+#include "mensaje.h"
 #include <string>
 
 using namespace std;
@@ -13,14 +14,18 @@ private:
     Usuario** usuarios;
     bool* matrizAmistades;
     SolicitudAmistad* solicitudes;
+    Mensaje* mensajes;
 
     int cantidadUsuarios;
     int capacidadUsuarios;
     int cantidadSolicitudes;
     int capacidadSolicitudes;
+    int cantidadMensajes;
+    int capacidadMensajes;
 
     void ampliarCapacidad();
     void ampliarCapacidadSolicitudes();
+    void ampliarCapacidadMensajes();
     void eliminarSolicitud(int posicion);
     int buscarIndiceUsuario(const string& nombre) const;
     int buscarIndiceSolicitud(const string& emisor,
@@ -51,6 +56,15 @@ public:
         const string& receptor, int posicion) const;
     bool aceptarSolicitud(const string& receptor, const string& emisor);
     bool rechazarSolicitud(const string& receptor, const string& emisor);
+
+    bool enviarMensaje(const string& emisor, const string& receptor,
+                       const string& texto);
+    int getCantidadMensajes() const;
+    const Mensaje* obtenerMensaje(int posicion) const;
+    int marcarMensajesLeidos(const string& receptor);
+
+    bool guardarMensajes(const string& ruta) const;
+    bool cargarMensajes(const string& ruta);
 
     bool guardarUsuarios(const string& ruta) const;
     bool cargarUsuarios(const string& ruta);

@@ -11,6 +11,7 @@ int main()
     const string rutaUsuarios = "usuarios.txt";
     const string rutaAmistades = "amistades.txt";
     const string rutaSolicitudes = "solicitudes.txt";
+    const string rutaMensajes = "mensajes.txt";
 
     Plataforma plataforma;
     ifstream archivoUsuarios(rutaUsuarios);
@@ -85,7 +86,26 @@ int main()
         return 1;
     }
 
-    cout << "===== Ude@Book - Solicitudes de amistad =====" << endl;
+    // recuperar mensajes guardados, o crear archivo vacio
+    ifstream archivoMensajes(rutaMensajes);
+    bool existenMensajes = archivoMensajes.is_open();
+    archivoMensajes.close();
+
+    if (existenMensajes)
+    {
+        if (!plataforma.cargarMensajes(rutaMensajes))
+        {
+            cout << "Error al cargar mensajes." << endl;
+            return 1;
+        }
+    }
+    else if (!plataforma.guardarMensajes(rutaMensajes))
+    {
+        cout << "Error al crear mensajes.txt." << endl;
+        return 1;
+    }
+
+    cout << "===== Ude@Book - Mensajes y amistades =====" << endl;
     cout << "Usuarios cargados: " << plataforma.getCantidadUsuarios() << endl;
 
     string opcion;
@@ -99,6 +119,10 @@ int main()
         cout << "6. Consultar amistad" << endl;
         cout << "7. Contar amigos" << endl;
         cout << "8. Listar usuarios" << endl;
+        cout << "9. Enviar mensaje" << endl;
+        cout << "10. Leer nuevos mensajes" << endl;
+        cout << "11. Buscar mensajes recibidos por fechas" << endl;
+        cout << "12. Ver mensajes enviados" << endl;
         cout << "0. Salir" << endl;
         cout << "Opcion: ";
         getline(cin, opcion);
@@ -260,6 +284,152 @@ int main()
             {
                 const Usuario* usuario = plataforma.obtenerUsuario(i);
                 cout << i << ". " << usuario->getNombreUsuario() << endl;
+            }
+        }
+        else if (opcion == "9")
+        {
+            string emisor, receptor, texto;
+            cout << "Quien envia: ";
+            getline(cin, emisor);
+            cout << "Quien recibe: ";
+            getline(cin, receptor);
+            cout << "Mensaje (hasta 512 caracteres): ";
+            getline(cin, texto);
+
+            if (plataforma.enviarMensaje(emisor, receptor, texto))
+            {
+                if (plataforma.guardarMensajes(rutaMensajes))
+                {
+                    cout << "Mensaje enviado y guardado." << endl;
+                }
+                else
+                {
+                    cout << "Mensaje creado en RAM, pero fallo al guardar." << endl;
+                }
+            }
+            else
+            {
+                cout << "No se pudo enviar: deben ser amigos y el texto no puede"
+                     << " estar vacio ni superar 512 caracteres." << endl;
+            }
+        }
+        else if (opcion == "10")
+        {
+            string receptor;
+            cout << "Usuario que consulta: ";
+            getline(cin, receptor);
+
+            if (plataforma.buscarUsuario(receptor) == nullptr)
+            {
+                cout << "Ese usuario no existe." << endl;
+            }
+            else
+            {
+                int total = 0;
+                for (int i = 0; i < plataforma.getCantidadMensajes(); i++)
+                {
+                    const Mensaje* mensaje = plataforma.obtenerMensaje(i);
+                    if (mensaje->getReceptor() == receptor &&
+                        !mensaje->estaLeido())
+                    {
+                        cout << "De: " << mensaje->getEmisor() << endl;
+                        cout << "Fecha: " << mensaje->getFechaEnvio() << endl;
+                        cout << "Texto: " << mensaje->getTexto() << endl;
+                        cout << "--------------------" << endl;
+                        total++;
+                    }
+                }
+
+                if (total == 0)
+                {
+                    cout << "No hay mensajes nuevos." << endl;
+                }
+                else
+                {
+                    plataforma.marcarMensajesLeidos(receptor);
+                    if (plataforma.guardarMensajes(rutaMensajes))
+                    {
+                        cout << "Mensajes leidos y guardados: " << total << endl;
+                    }
+                    else
+                    {
+                        cout << "Se marcaron como leidos en RAM, pero fallo"
+                             << " el guardado." << endl;
+                    }
+                }
+            }
+        }
+        else if (opcion == "11")
+        {
+            string receptor, inicio, fin;
+            cout << "Usuario que consulta: ";
+            getline(cin, receptor);
+            cout << "Fecha inicio (AAAA-MM-DD): ";
+            getline(cin, inicio);
+            cout << "Fecha fin (AAAA-MM-DD): ";
+            getline(cin, fin);
+
+            if (plataforma.buscarUsuario(receptor) == nullptr)
+            {
+                cout << "Ese usuario no existe." << endl;
+            }
+            else if (!Mensaje::fechaValida(inicio) ||
+                     !Mensaje::fechaValida(fin) || inicio > fin)
+            {
+                cout << "Rango de fechas no valido." << endl;
+            }
+            else
+            {
+                int total = 0;
+                for (int i = 0; i < plataforma.getCantidadMensajes(); i++)
+                {
+                    const Mensaje* mensaje = plataforma.obtenerMensaje(i);
+                    string fecha = mensaje->getFechaEnvio().substr(0, 10);
+
+                    if (mensaje->getReceptor() == receptor &&
+                        fecha >= inicio && fecha <= fin)
+                    {
+                        cout << "De: " << mensaje->getEmisor() << endl;
+                        cout << "Fecha: " << mensaje->getFechaEnvio() << endl;
+                        cout << "Texto: " << mensaje->getTexto() << endl;
+                        cout << "Estado: "
+                             << (mensaje->estaLeido() ? "Leido" : "No leido")
+                             << endl;
+                        cout << "--------------------" << endl;
+                        total++;
+                    }
+                }
+                cout << "Mensajes encontrados: " << total << endl;
+            }
+        }
+        else if (opcion == "12")
+        {
+            string emisor;
+            cout << "Usuario que consulta: ";
+            getline(cin, emisor);
+            if (plataforma.buscarUsuario(emisor) == nullptr)
+            {
+                cout << "Ese usuario no existe." << endl;
+            }
+            else
+            {
+                int total = 0;
+                for (int i = 0; i < plataforma.getCantidadMensajes(); i++)
+                {
+                    const Mensaje* mensaje = plataforma.obtenerMensaje(i);
+                    if (mensaje->getEmisor() == emisor)
+                    {
+                        cout << "Para: " << mensaje->getReceptor() << endl;
+                        cout << "Fecha: " << mensaje->getFechaEnvio() << endl;
+                        cout << "Texto: " << mensaje->getTexto() << endl;
+                        cout << "Estado: "
+                             << (mensaje->estaLeido() ? "Leido" : "No leido")
+                             << endl;
+                        cout << "--------------------" << endl;
+                        total++;
+                    }
+                }
+                cout << "Mensajes enviados: " << total << endl;
             }
         }
         else if (opcion != "0")

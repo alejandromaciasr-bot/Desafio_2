@@ -1,6 +1,10 @@
 #include "plataforma.h"
 #include <fstream>
 #include <limits>
+#include <chrono>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
 
 // constructor
 Plataforma::Plataforma()
@@ -9,11 +13,14 @@ Plataforma::Plataforma()
     capacidadUsuarios = 2;
     cantidadSolicitudes = 0;
     capacidadSolicitudes = 2;
+    cantidadMensajes = 0;
+    capacidadMensajes = 2;
 
     usuarios = new Usuario*[capacidadUsuarios];
     matrizAmistades =
         new bool[capacidadUsuarios * capacidadUsuarios]();
     solicitudes = new SolicitudAmistad[capacidadSolicitudes];
+    mensajes = new Mensaje[capacidadMensajes];
 }
 
 // destructor
@@ -27,6 +34,7 @@ Plataforma::~Plataforma()
     delete[] usuarios;
     delete[] matrizAmistades;
     delete[] solicitudes;
+    delete[] mensajes;
 }
 
 // ampliar el arreglo de usuarios y la matriz
@@ -73,6 +81,22 @@ void Plataforma::ampliarCapacidadSolicitudes()
     delete[] solicitudes;
     solicitudes = nuevoArreglo;
     capacidadSolicitudes = nuevaCapacidad;
+}
+
+// ampliar el arreglo de mensajes
+void Plataforma::ampliarCapacidadMensajes()
+{
+    int nuevaCapacidad = capacidadMensajes * 2;
+    Mensaje* nuevoArreglo = new Mensaje[nuevaCapacidad];
+
+    for (int i = 0; i < cantidadMensajes; i++)
+    {
+        nuevoArreglo[i] = mensajes[i];
+    }
+
+    delete[] mensajes;
+    mensajes = nuevoArreglo;
+    capacidadMensajes = nuevaCapacidad;
 }
 
 // eliminar una solicitud desplazando las restantes
@@ -370,26 +394,35 @@ bool Plataforma::cargarUsuarios(const string& ruta)
     Usuario** usuariosAnteriores = usuarios;
     bool* matrizAnterior = matrizAmistades;
     SolicitudAmistad* solicitudesAnteriores = solicitudes;
+    Mensaje* mensajesAnteriores = mensajes;
     int cantidadAnterior = cantidadUsuarios;
     int capacidadAnterior = capacidadUsuarios;
     int cantidadSolicitudesAnterior = cantidadSolicitudes;
     int capacidadSolicitudesAnterior = capacidadSolicitudes;
+    int cantidadMensajesAnterior = cantidadMensajes;
+    int capacidadMensajesAnterior = capacidadMensajes;
 
     usuarios = temporal.usuarios;
     matrizAmistades = temporal.matrizAmistades;
     solicitudes = temporal.solicitudes;
+    mensajes = temporal.mensajes;
     cantidadUsuarios = temporal.cantidadUsuarios;
     capacidadUsuarios = temporal.capacidadUsuarios;
     cantidadSolicitudes = temporal.cantidadSolicitudes;
     capacidadSolicitudes = temporal.capacidadSolicitudes;
+    cantidadMensajes = temporal.cantidadMensajes;
+    capacidadMensajes = temporal.capacidadMensajes;
 
     temporal.usuarios = usuariosAnteriores;
     temporal.matrizAmistades = matrizAnterior;
     temporal.solicitudes = solicitudesAnteriores;
+    temporal.mensajes = mensajesAnteriores;
     temporal.cantidadUsuarios = cantidadAnterior;
     temporal.capacidadUsuarios = capacidadAnterior;
     temporal.cantidadSolicitudes = cantidadSolicitudesAnterior;
     temporal.capacidadSolicitudes = capacidadSolicitudesAnterior;
+    temporal.cantidadMensajes = cantidadMensajesAnterior;
+    temporal.capacidadMensajes = capacidadMensajesAnterior;
     return true;
 }
 
@@ -577,5 +610,168 @@ bool Plataforma::cargarSolicitudes(const string& ruta)
     solicitudes = nuevasSolicitudes;
     cantidadSolicitudes = totalSolicitudes;
     capacidadSolicitudes = nuevaCapacidad;
+    return true;
+}
+
+
+// crear una fecha con la hora local del computador
+static string obtenerFechaHoraActual()
+{
+    auto ahora = chrono::system_clock::now();
+    time_t instante = chrono::system_clock::to_time_t(ahora);
+    tm* fecha = std::localtime(&instante);
+
+    if (fecha == nullptr)
+    {
+        return "";
+    }
+
+    ostringstream salida;
+    salida << put_time(fecha, "%Y-%m-%d %H:%M:%S");
+    return salida.str();
+}
+
+// enviar solo a amigos e insertar por fecha de envio
+bool Plataforma::enviarMensaje(const string& emisor,
+                               const string& receptor,
+                               const string& texto)
+{
+    if (emisor == receptor || !sonAmigos(emisor, receptor) ||
+        !Mensaje::textoValido(texto))
+    {
+        return false;
+    }
+
+    string fecha = obtenerFechaHoraActual();
+    if (!Mensaje::fechaHoraValida(fecha))
+    {
+        return false;
+    }
+
+    if (cantidadMensajes == capacidadMensajes)
+    {
+        ampliarCapacidadMensajes();
+    }
+
+    int posicion = cantidadMensajes;
+    while (posicion > 0 && mensajes[posicion - 1].getFechaEnvio() > fecha)
+    {
+        mensajes[posicion] = mensajes[posicion - 1];
+        posicion--;
+    }
+
+    mensajes[posicion] = Mensaje(emisor, receptor, texto, fecha);
+    cantidadMensajes++;
+    return true;
+}
+
+int Plataforma::getCantidadMensajes() const
+{
+    return cantidadMensajes;
+}
+
+const Mensaje* Plataforma::obtenerMensaje(int posicion) const
+{
+    if (posicion < 0 || posicion >= cantidadMensajes)
+    {
+        return nullptr;
+    }
+    return &mensajes[posicion];
+}
+
+// todos los mensajes nuevos se marcan como leidos tras mostrarlos
+int Plataforma::marcarMensajesLeidos(const string& receptor)
+{
+    if (buscarIndiceUsuario(receptor) == -1)
+    {
+        return -1;
+    }
+
+    int cantidad = 0;
+    for (int i = 0; i < cantidadMensajes; i++)
+    {
+        if (mensajes[i].getReceptor() == receptor &&
+            !mensajes[i].estaLeido())
+        {
+            mensajes[i].marcarLeido();
+            cantidad++;
+        }
+    }
+    return cantidad;
+}
+
+bool Plataforma::guardarMensajes(const string& ruta) const
+{
+    ofstream archivo(ruta);
+    if (!archivo.is_open())
+    {
+        return false;
+    }
+
+    archivo << "UDEABOOK_MENSAJES_V1" << '\n';
+    archivo << cantidadMensajes << '\n';
+    for (int i = 0; i < cantidadMensajes; i++)
+    {
+        if (!mensajes[i].guardarEnArchivo(archivo))
+        {
+            return false;
+        }
+    }
+
+    archivo.close();
+    return archivo.good();
+}
+
+bool Plataforma::cargarMensajes(const string& ruta)
+{
+    ifstream archivo(ruta);
+    if (!archivo.is_open())
+    {
+        return false;
+    }
+
+    string encabezado;
+    if (!getline(archivo, encabezado) ||
+        encabezado != "UDEABOOK_MENSAJES_V1")
+    {
+        return false;
+    }
+
+    int total;
+    if (!(archivo >> total) || total < 0)
+    {
+        return false;
+    }
+    archivo.ignore(numeric_limits<streamsize>::max(), '\n');
+    if (!archivo)
+    {
+        return false;
+    }
+
+    int nuevaCapacidad = (total > 2) ? total : 2;
+    Mensaje* nuevosMensajes = new Mensaje[nuevaCapacidad];
+
+    for (int i = 0; i < total; i++)
+    {
+        if (!nuevosMensajes[i].cargarDesdeArchivo(archivo))
+        {
+            delete[] nuevosMensajes;
+            return false;
+        }
+
+        if (buscarIndiceUsuario(nuevosMensajes[i].getEmisor()) == -1 ||
+            buscarIndiceUsuario(nuevosMensajes[i].getReceptor()) == -1 ||
+            (i > 0 && nuevosMensajes[i - 1].getFechaEnvio() >
+                          nuevosMensajes[i].getFechaEnvio()))
+        {
+            delete[] nuevosMensajes;
+            return false;
+        }
+    }
+
+    delete[] mensajes;
+    mensajes = nuevosMensajes;
+    cantidadMensajes = total;
+    capacidadMensajes = nuevaCapacidad;
     return true;
 }
