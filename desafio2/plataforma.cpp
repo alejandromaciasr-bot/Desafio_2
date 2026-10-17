@@ -160,6 +160,24 @@ bool Plataforma::agregarUsuario(const Usuario& usuario)
     return true;
 }
 
+// comprobar credenciales usando los datos cargados desde usuarios.txt
+bool Plataforma::autenticarUsuario(const string& nombre,
+                                   const string& clave) const
+{
+    if (nombre.empty() || clave.empty())
+    {
+        return false;
+    }
+
+    int indice = buscarIndiceUsuario(nombre);
+    if (indice == -1)
+    {
+        return false;
+    }
+
+    return usuarios[indice]->verificarContrasena(clave);
+}
+
 const Usuario* Plataforma::buscarUsuario(const string& nombre) const
 {
     int indice = buscarIndiceUsuario(nombre);

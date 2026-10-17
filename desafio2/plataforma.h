@@ -41,6 +41,7 @@ public:
     Plataforma& operator=(const Plataforma& otra) = delete;
 
     bool agregarUsuario(const Usuario& usuario);
+    bool autenticarUsuario(const string& nombre, const string& clave) const;
     const Usuario* buscarUsuario(const string& nombre) const;
     const Usuario* obtenerUsuario(int posicion) const;
     int getCantidadUsuarios() const;
