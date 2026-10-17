@@ -91,6 +91,44 @@ static void prepararAlbumesDePrueba(Plataforma& plataforma)
     plataforma.agregarAlbumInicial("laura25", privado);
 }
 
+// mostrar en consola las rutas de las fotos seleccionadas
+static void mostrarFotosPerfilAmigos(const Plataforma& plataforma,
+                                     const int* indices, int total)
+{
+    cout << "\n===== Fotos de perfil de amigos =====" << endl;
+
+    if (total <= 0)
+    {
+        cout << "Este usuario no tiene amigos para mostrar." << endl;
+        return;
+    }
+
+    for (int i = 0; i < total; i++)
+    {
+        const Usuario* amigo = plataforma.obtenerUsuario(indices[i]);
+        if (amigo != nullptr)
+        {
+            cout << "Amigo " << i + 1 << ": " << amigo->getNombreUsuario()
+            << endl;
+            if (amigo->getFotoPerfil().empty())
+            {
+                cout << "Foto: ruta no registrada en usuarios.txt" << endl;
+            }
+            else
+            {
+                cout << "Foto: " << amigo->getFotoPerfil() << endl;
+            }
+        }
+    }
+
+    if (total < 3)
+    {
+        cout << "Solo hay " << total
+             << " amigo(s); no es posible mostrar tres fotos distintas."
+             << endl;
+    }
+}
+
 int main()
 {
     const string rutaUsuarios = "usuarios.txt";
@@ -267,6 +305,13 @@ int main()
         }
         cout << "\nBienvenido a Ude@Book, " << usuarioActivo << "!" << endl;
 
+        // un grupo inicial y como maximo una actualizacion por sesion
+        int fotosMostradas[3] = {-1, -1, -1};
+        int totalFotosMostradas = plataforma.seleccionarFotosAmigos(
+            usuarioActivo, fotosMostradas, 3);
+        bool fotosActualizadas = false;
+        mostrarFotosPerfilAmigos(plataforma, fotosMostradas, totalFotosMostradas);
+
         string opcion;
         do
         {
@@ -286,6 +331,7 @@ int main()
             cout << "13. Ver mis sugerencias de amistad" << endl;
             cout << "14. Visitar albumes de un amigo" << endl;
             cout << "15. Cerrar sesion" << endl;
+            cout << "16. Cambiar fotos de perfil (una vez)" << endl;
             cout << "0. Salir del programa" << endl;
             cout << "Opcion: ";
             if (!getline(cin, opcion))
@@ -785,6 +831,46 @@ int main()
                                 }
                             }
                         }
+                    }
+                }
+            }
+            else if (opcion == "16")
+            {
+                if (fotosActualizadas)
+                {
+                    cout << "Ya uso la actualizacion de fotos en esta sesion."
+                         << endl;
+                }
+                else if (plataforma.contarAmigos(usuarioActivo) <= totalFotosMostradas)
+                {
+                    cout << "No hay amigos adicionales para formar otro grupo."
+                         << endl;
+                    cout << "Se necesita al menos un amigo distinto a los ya mostrados."
+                         << endl;
+                }
+                else
+                {
+                    int nuevasFotos[3] = {-1, -1, -1};
+                    int totalNuevas = plataforma.seleccionarFotosAmigos(
+                        usuarioActivo, nuevasFotos, 3,
+                        fotosMostradas, totalFotosMostradas);
+
+                    if (totalNuevas > 0)
+                    {
+                        for (int i = 0; i < totalNuevas; i++)
+                        {
+                            fotosMostradas[i] = nuevasFotos[i];
+                        }
+                        totalFotosMostradas = totalNuevas;
+                        fotosActualizadas = true;
+                        mostrarFotosPerfilAmigos(plataforma,
+                                                 fotosMostradas, totalFotosMostradas);
+                        cout << "Actualizacion usada; no se puede repetir en esta sesion."
+                             << endl;
+                    }
+                    else
+                    {
+                        cout << "No fue posible actualizar las fotos." << endl;
                     }
                 }
             }

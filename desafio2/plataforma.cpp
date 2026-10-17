@@ -5,6 +5,7 @@
 #include <ctime>
 #include <iomanip>
 #include <sstream>
+#include <random>
 
 // constructor
 Plataforma::Plataforma()
@@ -205,6 +206,149 @@ int Plataforma::getCantidadUsuarios() const
 int Plataforma::getCapacidadUsuarios() const
 {
     return capacidadUsuarios;
+}
+
+// seleccionar fotos de amigos con prioridad segun amigos en comun
+// los pesos 2, 5 y 7 equivalen a 1, 2.5 y 3.5
+int Plataforma::seleccionarFotosAmigos(const string& nombre, int* resultado,
+                                       int maximo, const int* anteriores,
+                                       int cantidadAnteriores) const
+{
+    int indiceUsuario = buscarIndiceUsuario(nombre);
+    if (indiceUsuario == -1 || resultado == nullptr || maximo < 1 ||
+        cantidadAnteriores < 0 || (cantidadAnteriores > 0 && anteriores == nullptr))
+    {
+        return -1;
+    }
+
+    // arreglos dinamicos propios, sin contenedores stl
+    int* candidatos = new int[cantidadUsuarios];
+    int* pesos = new int[cantidadUsuarios];
+    int totalElegidos = 0;
+
+    // generador de numeros aleatorios de la biblioteca estandar
+    mt19937 generador(random_device{}());
+
+    // fase 0: seleccionar primero amigos que no salieron antes
+    // fase 1: completar con amigos anteriores si no hay otros suficientes
+    for (int fase = 0; fase < 2 && totalElegidos < maximo; fase++)
+    {
+        int totalCandidatos = 0;
+
+        for (int j = 0; j < cantidadUsuarios; j++)
+        {
+            if (!matrizAmistades[indiceUsuario * capacidadUsuarios + j])
+            {
+                continue;
+            }
+
+            bool yaElegido = false;
+            for (int k = 0; k < totalElegidos; k++)
+            {
+                if (resultado[k] == j)
+                {
+                    yaElegido = true;
+                    break;
+                }
+            }
+            if (yaElegido)
+            {
+                continue;
+            }
+
+            if (fase == 0)
+            {
+                bool aparecioAntes = false;
+                for (int k = 0; k < cantidadAnteriores; k++)
+                {
+                    if (anteriores[k] == j)
+                    {
+                        aparecioAntes = true;
+                        break;
+                    }
+                }
+                if (aparecioAntes)
+                {
+                    continue;
+                }
+            }
+
+            int enComun = 0;
+            for (int k = 0; k < cantidadUsuarios; k++)
+            {
+                if (matrizAmistades[indiceUsuario * capacidadUsuarios + k] &&
+                    matrizAmistades[j * capacidadUsuarios + k])
+                {
+                    enComun++;
+                }
+            }
+
+            candidatos[totalCandidatos] = j;
+            if (enComun <= 10)
+            {
+                pesos[totalCandidatos] = 2;
+            }
+            else if (enComun <= 20)
+            {
+                pesos[totalCandidatos] = 5;
+            }
+            else
+            {
+                pesos[totalCandidatos] = 7;
+            }
+            totalCandidatos++;
+        }
+
+        // sorteo ponderado sin reemplazo: quitar al elegido de los candidatos
+        while (totalElegidos < maximo && totalCandidatos > 0)
+        {
+            int sumaPesos = 0;
+            for (int i = 0; i < totalCandidatos; i++)
+            {
+                sumaPesos = sumaPesos + pesos[i];
+            }
+
+            uniform_int_distribution<int> sorteo(1, sumaPesos);
+            int boleto = sorteo(generador);
+            int posicionElegida = 0;
+
+            for (int i = 0; i < totalCandidatos; i++)
+            {
+                boleto = boleto - pesos[i];
+                if (boleto <= 0)
+                {
+                    posicionElegida = i;
+                    break;
+                }
+            }
+
+            resultado[totalElegidos] = candidatos[posicionElegida];
+            totalElegidos++;
+
+            // eliminacion manual del candidato, sin repetirlo en el grupo
+            for (int i = posicionElegida; i < totalCandidatos - 1; i++)
+            {
+                candidatos[i] = candidatos[i + 1];
+                pesos[i] = pesos[i + 1];
+            }
+            totalCandidatos--;
+        }
+    }
+
+    // mezclamos el resultado para que las fotos nuevas no aparezcan
+    // siempre al principio del segundo grupo
+    for (int i = totalElegidos - 1; i > 0; i--)
+    {
+        uniform_int_distribution<int> sorteo(0, i);
+        int j = sorteo(generador);
+        int auxiliar = resultado[i];
+        resultado[i] = resultado[j];
+        resultado[j] = auxiliar;
+    }
+
+    delete[] candidatos;
+    delete[] pesos;
+    return totalElegidos;
 }
 
 // crear amistad solo desde la aceptacion de una solicitud

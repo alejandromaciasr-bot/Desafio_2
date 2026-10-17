@@ -47,6 +47,13 @@ public:
     int getCantidadUsuarios() const;
     int getCapacidadUsuarios() const;
 
+    // seleccion ponderada sin repeticion (hasta maximo fotos)
+    // los anteriores se evitan primero al actualizar el grupo
+    // devuelve indices del arreglo usuarios, o -1 si hay error
+    int seleccionarFotosAmigos(const string& nombre, int* resultado,
+                               int maximo, const int* anteriores = nullptr,
+                               int cantidadAnteriores = 0) const;
+
     bool sonAmigos(const string& usuario1,
                    const string& usuario2) const;
     int contarAmigos(const string& nombre) const;
