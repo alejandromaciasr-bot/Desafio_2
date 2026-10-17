@@ -61,6 +61,7 @@ public:
     void vaciarAlbumes();
     bool modificarLikeFoto(int posicionAlbum, int posicionFoto, bool darLike);
 
+    size_t memoriaDinamicaEstimada() const;
     bool guardarEnArchivo(ostream& archivo) const;
     bool cargarDesdeArchivo(istream& archivo);
 };

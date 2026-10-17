@@ -46,6 +46,7 @@ public:
     const Usuario* obtenerUsuario(int posicion) const;
     int getCantidadUsuarios() const;
     int getCapacidadUsuarios() const;
+    size_t memoriaTotalEstimada() const;
 
     // seleccion ponderada sin repeticion (hasta maximo fotos)
     // los anteriores se evitan primero al actualizar el grupo

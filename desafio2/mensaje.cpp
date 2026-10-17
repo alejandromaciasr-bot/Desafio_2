@@ -1,3 +1,4 @@
+#include "medidorrecursos.h"
 #include "mensaje.h"
 
 // convierte dos o cuatro digitos decimales a un entero
@@ -6,6 +7,7 @@ static int numeroDesdeTexto(const string& texto, int inicio, int cantidad)
     int numero = 0;
     for (int i = inicio; i < inicio + cantidad; i++)
     {
+        MedidorRecursos::contarIteracion();
         if (texto[i] < '0' || texto[i] > '9')
         {
             return -1;
@@ -74,6 +76,7 @@ bool Mensaje::textoValido(const string& contenido)
 
     for (int i = 0; i < static_cast<int>(contenido.size()); i++)
     {
+        MedidorRecursos::contarIteracion();
         unsigned char caracter = static_cast<unsigned char>(contenido[i]);
 
         if (caracter == '\n' || caracter == '\r')

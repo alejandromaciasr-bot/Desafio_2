@@ -1,3 +1,4 @@
+#include "medidorrecursos.h"
 #include "usuario.h"
 #include <iostream>
 
@@ -59,6 +60,7 @@ Usuario& Usuario::operator=(const Usuario& otro)
         nuevosAlbumes = new Album[otro.capacidadAlbumes];
         for (int i = 0; i < otro.cantidadAlbumes; i++)
         {
+            MedidorRecursos::contarIteracion();
             nuevosAlbumes[i] = otro.albumes[i];
         }
     }
@@ -91,6 +93,7 @@ void Usuario::ampliarAlbumes()
     Album* nuevoArreglo = new Album[nuevaCapacidad];
     for (int i = 0; i < cantidadAlbumes; i++)
     {
+        MedidorRecursos::contarIteracion();
         nuevoArreglo[i] = albumes[i];
     }
 
@@ -168,6 +171,7 @@ bool Usuario::agregarAlbum(const Album& album)
 
     for (int i = 0; i < cantidadAlbumes; i++)
     {
+        MedidorRecursos::contarIteracion();
         if (albumes[i].getNombre() == album.getNombre())
         {
             return false;
@@ -203,6 +207,26 @@ bool Usuario::modificarLikeFoto(int posicionAlbum, int posicionFoto,
 }
 
 // mantenemos el formato V1 de los datos basicos de usuario
+size_t Usuario::memoriaDinamicaEstimada() const
+{
+    size_t bytes = static_cast<size_t>(capacidadAlbumes) * sizeof(Album);
+    bytes = bytes + MedidorRecursos::memoriaCadena(nombreUsuario);
+    bytes = bytes + MedidorRecursos::memoriaCadena(fechaNacimiento);
+    bytes = bytes + MedidorRecursos::memoriaCadena(correo);
+    bytes = bytes + MedidorRecursos::memoriaCadena(contrasena);
+    bytes = bytes + MedidorRecursos::memoriaCadena(fotoPerfil);
+    bytes = bytes + MedidorRecursos::memoriaCadena(ciudad);
+    bytes = bytes + MedidorRecursos::memoriaCadena(pais);
+    bytes = bytes + MedidorRecursos::memoriaCadena(fechaInscripcion);
+
+    for (int i = 0; i < cantidadAlbumes; i++)
+    {
+        MedidorRecursos::contarIteracion();
+        bytes = bytes + albumes[i].memoriaDinamicaEstimada();
+    }
+    return bytes;
+}
+
 bool Usuario::guardarEnArchivo(ostream& archivo) const
 {
     archivo << nombreUsuario << '\n';

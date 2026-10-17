@@ -1,3 +1,4 @@
+#include "medidorrecursos.h"
 #include "plataforma.h"
 #include <fstream>
 #include <limits>
@@ -29,6 +30,7 @@ Plataforma::~Plataforma()
 {
     for (int i = 0; i < cantidadUsuarios; i++)
     {
+        MedidorRecursos::contarIteracion();
         delete usuarios[i];
     }
 
@@ -47,13 +49,16 @@ void Plataforma::ampliarCapacidad()
 
     for (int i = 0; i < cantidadUsuarios; i++)
     {
+        MedidorRecursos::contarIteracion();
         nuevoArreglo[i] = usuarios[i];
     }
 
     for (int i = 0; i < cantidadUsuarios; i++)
     {
+        MedidorRecursos::contarIteracion();
         for (int j = 0; j < cantidadUsuarios; j++)
         {
+            MedidorRecursos::contarIteracion();
             nuevaMatriz[i * nuevaCapacidad + j] =
                 matrizAmistades[i * capacidadUsuarios + j];
         }
@@ -76,6 +81,7 @@ void Plataforma::ampliarCapacidadSolicitudes()
 
     for (int i = 0; i < cantidadSolicitudes; i++)
     {
+        MedidorRecursos::contarIteracion();
         nuevoArreglo[i] = solicitudes[i];
     }
 
@@ -92,6 +98,7 @@ void Plataforma::ampliarCapacidadMensajes()
 
     for (int i = 0; i < cantidadMensajes; i++)
     {
+        MedidorRecursos::contarIteracion();
         nuevoArreglo[i] = mensajes[i];
     }
 
@@ -105,6 +112,7 @@ void Plataforma::eliminarSolicitud(int posicion)
 {
     for (int i = posicion; i < cantidadSolicitudes - 1; i++)
     {
+        MedidorRecursos::contarIteracion();
         solicitudes[i] = solicitudes[i + 1];
     }
 
@@ -117,6 +125,7 @@ int Plataforma::buscarIndiceUsuario(const string& nombre) const
 {
     for (int i = 0; i < cantidadUsuarios; i++)
     {
+        MedidorRecursos::contarIteracion();
         if (usuarios[i]->getNombreUsuario() == nombre)
         {
             return i;
@@ -132,6 +141,7 @@ int Plataforma::buscarIndiceSolicitud(const string& emisor,
 {
     for (int i = 0; i < cantidadSolicitudes; i++)
     {
+        MedidorRecursos::contarIteracion();
         if (solicitudes[i].getEmisor() == emisor &&
             solicitudes[i].getReceptor() == receptor)
         {
@@ -208,6 +218,40 @@ int Plataforma::getCapacidadUsuarios() const
     return capacidadUsuarios;
 }
 
+// estimacion de las estructuras y objetos propios que permanecen en ram
+size_t Plataforma::memoriaTotalEstimada() const
+{
+    size_t bytes = sizeof(Plataforma);
+    bytes = bytes + static_cast<size_t>(capacidadUsuarios) * sizeof(Usuario*);
+    bytes = bytes + static_cast<size_t>(capacidadUsuarios)
+                        * static_cast<size_t>(capacidadUsuarios) * sizeof(bool);
+    bytes = bytes + static_cast<size_t>(capacidadSolicitudes)
+                        * sizeof(SolicitudAmistad);
+    bytes = bytes + static_cast<size_t>(capacidadMensajes) * sizeof(Mensaje);
+
+    for (int i = 0; i < cantidadUsuarios; i++)
+    {
+        MedidorRecursos::contarIteracion();
+        bytes = bytes + sizeof(Usuario);
+        bytes = bytes + usuarios[i]->memoriaDinamicaEstimada();
+    }
+    for (int i = 0; i < cantidadSolicitudes; i++)
+    {
+        MedidorRecursos::contarIteracion();
+        bytes = bytes + MedidorRecursos::memoriaCadena(solicitudes[i].getEmisor());
+        bytes = bytes + MedidorRecursos::memoriaCadena(solicitudes[i].getReceptor());
+    }
+    for (int i = 0; i < cantidadMensajes; i++)
+    {
+        MedidorRecursos::contarIteracion();
+        bytes = bytes + MedidorRecursos::memoriaCadena(mensajes[i].getEmisor());
+        bytes = bytes + MedidorRecursos::memoriaCadena(mensajes[i].getReceptor());
+        bytes = bytes + MedidorRecursos::memoriaCadena(mensajes[i].getTexto());
+        bytes = bytes + MedidorRecursos::memoriaCadena(mensajes[i].getFechaEnvio());
+    }
+    return bytes;
+}
+
 // seleccionar fotos de amigos con prioridad segun amigos en comun
 // los pesos 2, 5 y 7 equivalen a 1, 2.5 y 3.5
 int Plataforma::seleccionarFotosAmigos(const string& nombre, int* resultado,
@@ -233,10 +277,12 @@ int Plataforma::seleccionarFotosAmigos(const string& nombre, int* resultado,
     // fase 1: completar con amigos anteriores si no hay otros suficientes
     for (int fase = 0; fase < 2 && totalElegidos < maximo; fase++)
     {
+        MedidorRecursos::contarIteracion();
         int totalCandidatos = 0;
 
         for (int j = 0; j < cantidadUsuarios; j++)
         {
+            MedidorRecursos::contarIteracion();
             if (!matrizAmistades[indiceUsuario * capacidadUsuarios + j])
             {
                 continue;
@@ -245,6 +291,7 @@ int Plataforma::seleccionarFotosAmigos(const string& nombre, int* resultado,
             bool yaElegido = false;
             for (int k = 0; k < totalElegidos; k++)
             {
+                MedidorRecursos::contarIteracion();
                 if (resultado[k] == j)
                 {
                     yaElegido = true;
@@ -261,6 +308,7 @@ int Plataforma::seleccionarFotosAmigos(const string& nombre, int* resultado,
                 bool aparecioAntes = false;
                 for (int k = 0; k < cantidadAnteriores; k++)
                 {
+                    MedidorRecursos::contarIteracion();
                     if (anteriores[k] == j)
                     {
                         aparecioAntes = true;
@@ -276,6 +324,7 @@ int Plataforma::seleccionarFotosAmigos(const string& nombre, int* resultado,
             int enComun = 0;
             for (int k = 0; k < cantidadUsuarios; k++)
             {
+                MedidorRecursos::contarIteracion();
                 if (matrizAmistades[indiceUsuario * capacidadUsuarios + k] &&
                     matrizAmistades[j * capacidadUsuarios + k])
                 {
@@ -302,9 +351,11 @@ int Plataforma::seleccionarFotosAmigos(const string& nombre, int* resultado,
         // sorteo ponderado sin reemplazo: quitar al elegido de los candidatos
         while (totalElegidos < maximo && totalCandidatos > 0)
         {
+            MedidorRecursos::contarIteracion();
             int sumaPesos = 0;
             for (int i = 0; i < totalCandidatos; i++)
             {
+                MedidorRecursos::contarIteracion();
                 sumaPesos = sumaPesos + pesos[i];
             }
 
@@ -314,6 +365,7 @@ int Plataforma::seleccionarFotosAmigos(const string& nombre, int* resultado,
 
             for (int i = 0; i < totalCandidatos; i++)
             {
+                MedidorRecursos::contarIteracion();
                 boleto = boleto - pesos[i];
                 if (boleto <= 0)
                 {
@@ -328,6 +380,7 @@ int Plataforma::seleccionarFotosAmigos(const string& nombre, int* resultado,
             // eliminacion manual del candidato, sin repetirlo en el grupo
             for (int i = posicionElegida; i < totalCandidatos - 1; i++)
             {
+                MedidorRecursos::contarIteracion();
                 candidatos[i] = candidatos[i + 1];
                 pesos[i] = pesos[i + 1];
             }
@@ -339,6 +392,7 @@ int Plataforma::seleccionarFotosAmigos(const string& nombre, int* resultado,
     // siempre al principio del segundo grupo
     for (int i = totalElegidos - 1; i > 0; i--)
     {
+        MedidorRecursos::contarIteracion();
         uniform_int_distribution<int> sorteo(0, i);
         int j = sorteo(generador);
         int auxiliar = resultado[i];
@@ -394,6 +448,7 @@ int Plataforma::contarAmigos(const string& nombre) const
     int total = 0;
     for (int j = 0; j < cantidadUsuarios; j++)
     {
+        MedidorRecursos::contarIteracion();
         if (matrizAmistades[indice * capacidadUsuarios + j])
         {
             total++;
@@ -436,6 +491,7 @@ int Plataforma::contarSolicitudesRecibidas(const string& receptor) const
     int total = 0;
     for (int i = 0; i < cantidadSolicitudes; i++)
     {
+        MedidorRecursos::contarIteracion();
         if (solicitudes[i].getReceptor() == receptor)
         {
             total++;
@@ -455,6 +511,7 @@ const SolicitudAmistad* Plataforma::obtenerSolicitudRecibida(
     int encontrada = 0;
     for (int i = 0; i < cantidadSolicitudes; i++)
     {
+        MedidorRecursos::contarIteracion();
         if (solicitudes[i].getReceptor() == receptor)
         {
             if (encontrada == posicion)
@@ -506,6 +563,7 @@ bool Plataforma::guardarUsuarios(const string& ruta) const
     archivo << cantidadUsuarios << '\n';
     for (int i = 0; i < cantidadUsuarios; i++)
     {
+        MedidorRecursos::contarIteracion();
         if (!usuarios[i]->guardarEnArchivo(archivo))
         {
             return false;
@@ -545,6 +603,7 @@ bool Plataforma::cargarUsuarios(const string& ruta)
     Plataforma temporal;
     for (int i = 0; i < totalUsuarios; i++)
     {
+        MedidorRecursos::contarIteracion();
         Usuario nuevoUsuario;
         if (!nuevoUsuario.cargarDesdeArchivo(archivo) ||
             !temporal.agregarUsuario(nuevoUsuario))
@@ -599,8 +658,10 @@ bool Plataforma::guardarAmistades(const string& ruta) const
     int totalRelaciones = 0;
     for (int i = 0; i < cantidadUsuarios; i++)
     {
+        MedidorRecursos::contarIteracion();
         for (int j = i + 1; j < cantidadUsuarios; j++)
         {
+            MedidorRecursos::contarIteracion();
             if (matrizAmistades[i * capacidadUsuarios + j])
             {
                 totalRelaciones++;
@@ -613,8 +674,10 @@ bool Plataforma::guardarAmistades(const string& ruta) const
 
     for (int i = 0; i < cantidadUsuarios; i++)
     {
+        MedidorRecursos::contarIteracion();
         for (int j = i + 1; j < cantidadUsuarios; j++)
         {
+            MedidorRecursos::contarIteracion();
             if (matrizAmistades[i * capacidadUsuarios + j])
             {
                 archivo << usuarios[i]->getNombreUsuario() << '\n';
@@ -658,6 +721,7 @@ bool Plataforma::cargarAmistades(const string& ruta)
 
     for (int k = 0; k < totalRelaciones; k++)
     {
+        MedidorRecursos::contarIteracion();
         string nombre1;
         string nombre2;
         if (!getline(archivo, nombre1) || !getline(archivo, nombre2))
@@ -696,6 +760,7 @@ bool Plataforma::guardarSolicitudes(const string& ruta) const
     archivo << cantidadSolicitudes << '\n';
     for (int i = 0; i < cantidadSolicitudes; i++)
     {
+        MedidorRecursos::contarIteracion();
         archivo << solicitudes[i].getEmisor() << '\n';
         archivo << solicitudes[i].getReceptor() << '\n';
     }
@@ -736,6 +801,7 @@ bool Plataforma::cargarSolicitudes(const string& ruta)
 
     for (int i = 0; i < totalSolicitudes; i++)
     {
+        MedidorRecursos::contarIteracion();
         string emisor;
         string receptor;
         if (!getline(archivo, emisor) || !getline(archivo, receptor))
@@ -755,6 +821,7 @@ bool Plataforma::cargarSolicitudes(const string& ruta)
 
         for (int j = 0; j < i; j++)
         {
+            MedidorRecursos::contarIteracion();
             if ((nuevasSolicitudes[j].getEmisor() == emisor &&
                  nuevasSolicitudes[j].getReceptor() == receptor) ||
                 (nuevasSolicitudes[j].getEmisor() == receptor &&
@@ -818,6 +885,7 @@ bool Plataforma::enviarMensaje(const string& emisor,
     int posicion = cantidadMensajes;
     while (posicion > 0 && mensajes[posicion - 1].getFechaEnvio() > fecha)
     {
+        MedidorRecursos::contarIteracion();
         mensajes[posicion] = mensajes[posicion - 1];
         posicion--;
     }
@@ -852,6 +920,7 @@ int Plataforma::marcarMensajesLeidos(const string& receptor)
     int cantidad = 0;
     for (int i = 0; i < cantidadMensajes; i++)
     {
+        MedidorRecursos::contarIteracion();
         if (mensajes[i].getReceptor() == receptor &&
             !mensajes[i].estaLeido())
         {
@@ -874,6 +943,7 @@ bool Plataforma::guardarMensajes(const string& ruta) const
     archivo << cantidadMensajes << '\n';
     for (int i = 0; i < cantidadMensajes; i++)
     {
+        MedidorRecursos::contarIteracion();
         if (!mensajes[i].guardarEnArchivo(archivo))
         {
             return false;
@@ -915,6 +985,7 @@ bool Plataforma::cargarMensajes(const string& ruta)
 
     for (int i = 0; i < total; i++)
     {
+        MedidorRecursos::contarIteracion();
         if (!nuevosMensajes[i].cargarDesdeArchivo(archivo))
         {
             delete[] nuevosMensajes;
@@ -955,10 +1026,12 @@ int Plataforma::generarSugerencias(const string& nombre, int k,
 
     for (int amigo = 0; amigo < cantidadUsuarios; amigo++)
     {
+        MedidorRecursos::contarIteracion();
         if (matrizAmistades[usuario * capacidadUsuarios + amigo])
         {
             for (int candidato = 0; candidato < cantidadUsuarios; candidato++)
             {
+                MedidorRecursos::contarIteracion();
                 if (matrizAmistades[amigo * capacidadUsuarios + candidato])
                 {
                     comunes[candidato]++;
@@ -972,6 +1045,7 @@ int Plataforma::generarSugerencias(const string& nombre, int k,
 
     for (int candidato = 0; candidato < cantidadUsuarios; candidato++)
     {
+        MedidorRecursos::contarIteracion();
         if (candidato == usuario || comunes[candidato] == 0 ||
             matrizAmistades[usuario * capacidadUsuarios + candidato])
         {
@@ -993,6 +1067,7 @@ int Plataforma::generarSugerencias(const string& nombre, int k,
 
         while (posicion < total)
         {
+            MedidorRecursos::contarIteracion();
             if (comunes[candidato] > coincidencias[posicion] ||
                 (comunes[candidato] == coincidencias[posicion] &&
                  nombreCandidato <
@@ -1013,6 +1088,7 @@ int Plataforma::generarSugerencias(const string& nombre, int k,
 
             for (int i = total - 1; i > posicion; i--)
             {
+                MedidorRecursos::contarIteracion();
                 indices[i] = indices[i - 1];
                 coincidencias[i] = coincidencias[i - 1];
             }
@@ -1097,11 +1173,13 @@ bool Plataforma::guardarAlbumes(const string& ruta) const
     archivo << cantidadUsuarios << '\n';
     for (int i = 0; i < cantidadUsuarios; i++)
     {
+        MedidorRecursos::contarIteracion();
         archivo << usuarios[i]->getNombreUsuario() << '\n';
         archivo << usuarios[i]->getCantidadAlbumes() << '\n';
 
         for (int j = 0; j < usuarios[i]->getCantidadAlbumes(); j++)
         {
+            MedidorRecursos::contarIteracion();
             if (!usuarios[i]->obtenerAlbum(j)->guardarEnArchivo(archivo))
             {
                 return false;
@@ -1140,6 +1218,7 @@ bool Plataforma::cargarAlbumes(const string& ruta)
 
     for (int i = 0; i < cantidadUsuarios && correcto; i++)
     {
+        MedidorRecursos::contarIteracion();
         copias[i] = new Usuario(*usuarios[i]);
         copias[i]->vaciarAlbumes();
 
@@ -1161,6 +1240,7 @@ bool Plataforma::cargarAlbumes(const string& ruta)
 
         for (int j = 0; j < cantidad && correcto; j++)
         {
+            MedidorRecursos::contarIteracion();
             Album nuevoAlbum;
             if (!nuevoAlbum.cargarDesdeArchivo(archivo) ||
                 !copias[i]->agregarAlbum(nuevoAlbum))
@@ -1174,6 +1254,7 @@ bool Plataforma::cargarAlbumes(const string& ruta)
     {
         for (int i = 0; i < cantidadUsuarios; i++)
         {
+            MedidorRecursos::contarIteracion();
             delete usuarios[i];
             usuarios[i] = copias[i];
             copias[i] = nullptr;
@@ -1182,6 +1263,7 @@ bool Plataforma::cargarAlbumes(const string& ruta)
 
     for (int i = 0; i < cantidadUsuarios; i++)
     {
+        MedidorRecursos::contarIteracion();
         delete copias[i];
     }
     delete[] copias;
