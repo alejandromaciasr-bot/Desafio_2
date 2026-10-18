@@ -1,3 +1,4 @@
+#include "medidorrecursos.h"
 #include "album.h"
 #include <iostream>
 #include <limits>
@@ -37,8 +38,13 @@ Album& Album::operator=(const Album& otro)
     if (otro.capacidadFotos > 0)
     {
         nuevasFotos = new Foto[otro.capacidadFotos];
-        for (int i = 0; i < otro.cantidadFotos; i++)
+        for (
+            int i = 0;
+            i < otro.cantidadFotos;
+            i++
+            )
         {
+            MedidorRecursos::contarIteracion();
             nuevasFotos[i] = otro.fotos[i];
         }
     }
@@ -63,8 +69,13 @@ void Album::ampliarFotos()
     int nuevaCapacidad = capacidadFotos == 0 ? 2 : capacidadFotos * 2;
     Foto* nuevoArreglo = new Foto[nuevaCapacidad];
 
-    for (int i = 0; i < cantidadFotos; i++)
+    for (
+        int i = 0;
+        i < cantidadFotos;
+        i++
+        )
     {
+        MedidorRecursos::contarIteracion();
         nuevoArreglo[i] = fotos[i];
     }
 
@@ -148,6 +159,25 @@ bool Album::modificarLike(int posicion, bool darLike)
     return true;
 }
 
+size_t Album::memoriaDinamicaEstimada() const
+{
+    size_t bytes = static_cast<size_t>(capacidadFotos) * sizeof(Foto);
+    bytes = bytes + MedidorRecursos::memoriaCadena(nombre);
+    bytes = bytes + MedidorRecursos::memoriaCadena(rutaAlmacenamiento);
+    bytes = bytes + MedidorRecursos::memoriaCadena(privacidad);
+
+    for (
+        int i = 0;
+        i < cantidadFotos;
+        i++
+        )
+    {
+        MedidorRecursos::contarIteracion();
+        bytes = bytes + fotos[i].memoriaCadenasEstimada();
+    }
+    return bytes;
+}
+
 bool Album::guardarEnArchivo(ostream& archivo) const
 {
     archivo << nombre << '\n';
@@ -155,8 +185,13 @@ bool Album::guardarEnArchivo(ostream& archivo) const
     archivo << privacidad << '\n';
     archivo << cantidadFotos << '\n';
 
-    for (int i = 0; i < cantidadFotos; i++)
+    for (
+        int i = 0;
+        i < cantidadFotos;
+        i++
+        )
     {
+        MedidorRecursos::contarIteracion();
         if (!fotos[i].guardarEnArchivo(archivo))
         {
             return false;
@@ -188,8 +223,13 @@ bool Album::cargarDesdeArchivo(istream& archivo)
     }
 
     Album temporal(nuevoNombre, nuevaRuta, nuevaPrivacidad);
-    for (int i = 0; i < totalFotos; i++)
+    for (
+        int i = 0;
+        i < totalFotos;
+        i++
+        )
     {
+        MedidorRecursos::contarIteracion();
         Foto nuevaFoto;
         if (!nuevaFoto.cargarDesdeArchivo(archivo) ||
             !temporal.agregarFoto(nuevaFoto))

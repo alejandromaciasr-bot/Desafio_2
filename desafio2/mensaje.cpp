@@ -5,7 +5,11 @@
 static int numeroDesdeTexto(const string& texto, int inicio, int cantidad)
 {
     int numero = 0;
-    for (int i = inicio; i < inicio + cantidad; i++)
+    for (
+        int i = inicio;
+        i < inicio + cantidad;
+        i++
+        )
     {
         MedidorRecursos::contarIteracion();
         if (texto[i] < '0' || texto[i] > '9')
@@ -74,7 +78,11 @@ bool Mensaje::textoValido(const string& contenido)
     int cantidad = 0;
     bool hayContenido = false;
 
-    for (int i = 0; i < static_cast<int>(contenido.size()); i++)
+    for (
+        int i = 0;
+        i < static_cast<int>(contenido.size());
+        i++
+        )
     {
         MedidorRecursos::contarIteracion();
         unsigned char caracter = static_cast<unsigned char>(contenido[i]);

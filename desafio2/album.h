@@ -41,6 +41,7 @@ public:
     bool agregarFoto(const Foto& foto);
     bool modificarLike(int posicion, bool darLike);
 
+    size_t memoriaDinamicaEstimada() const;
     bool guardarEnArchivo(ostream& archivo) const;
     bool cargarDesdeArchivo(istream& archivo);
 };

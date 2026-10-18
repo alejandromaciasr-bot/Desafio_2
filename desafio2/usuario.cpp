@@ -58,7 +58,11 @@ Usuario& Usuario::operator=(const Usuario& otro)
     if (otro.capacidadAlbumes > 0)
     {
         nuevosAlbumes = new Album[otro.capacidadAlbumes];
-        for (int i = 0; i < otro.cantidadAlbumes; i++)
+        for (
+            int i = 0;
+            i < otro.cantidadAlbumes;
+            i++
+            )
         {
             MedidorRecursos::contarIteracion();
             nuevosAlbumes[i] = otro.albumes[i];
@@ -91,7 +95,11 @@ void Usuario::ampliarAlbumes()
 {
     int nuevaCapacidad = capacidadAlbumes == 0 ? 2 : capacidadAlbumes * 2;
     Album* nuevoArreglo = new Album[nuevaCapacidad];
-    for (int i = 0; i < cantidadAlbumes; i++)
+    for (
+        int i = 0;
+        i < cantidadAlbumes;
+        i++
+        )
     {
         MedidorRecursos::contarIteracion();
         nuevoArreglo[i] = albumes[i];
@@ -169,7 +177,11 @@ bool Usuario::agregarAlbum(const Album& album)
         return false;
     }
 
-    for (int i = 0; i < cantidadAlbumes; i++)
+    for (
+        int i = 0;
+        i < cantidadAlbumes;
+        i++
+        )
     {
         MedidorRecursos::contarIteracion();
         if (albumes[i].getNombre() == album.getNombre())
@@ -219,7 +231,11 @@ size_t Usuario::memoriaDinamicaEstimada() const
     bytes = bytes + MedidorRecursos::memoriaCadena(pais);
     bytes = bytes + MedidorRecursos::memoriaCadena(fechaInscripcion);
 
-    for (int i = 0; i < cantidadAlbumes; i++)
+    for (
+        int i = 0;
+        i < cantidadAlbumes;
+        i++
+        )
     {
         MedidorRecursos::contarIteracion();
         bytes = bytes + albumes[i].memoriaDinamicaEstimada();

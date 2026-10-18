@@ -17,7 +17,11 @@ static bool convertirNumeroHasta20(const string& texto, int& numero)
 
     numero = 0;
 
-    for (int i = 0; i < static_cast<int>(texto.size()); i++)
+    for (
+        int i = 0;
+        i < static_cast<int>(texto.size());
+        i++
+        )
     {
         MedidorRecursos::contarIteracion();
         if (texto[i] < '0' || texto[i] > '9')
@@ -44,7 +48,11 @@ static bool convertirIndice(const string& texto, int maximo, int& numero)
         return false;
     }
     numero = 0;
-    for (int i = 0; i < static_cast<int>(texto.size()); i++)
+    for (
+        int i = 0;
+        i < static_cast<int>(texto.size());
+        i++
+        )
     {
         MedidorRecursos::contarIteracion();
         if (texto[i] < '0' || texto[i] > '9')
@@ -98,7 +106,7 @@ static void prepararAlbumesDePrueba(Plataforma& plataforma)
 static void mostrarFotosPerfilAmigos(const Plataforma& plataforma,
                                      const int* indices, int total)
 {
-    cout << "\n===== Fotos de perfil de amigos =====" << endl;
+    cout << "\nFotos de perfil de amigos" << endl;
 
     if (total <= 0)
     {
@@ -106,7 +114,11 @@ static void mostrarFotosPerfilAmigos(const Plataforma& plataforma,
         return;
     }
 
-    for (int i = 0; i < total; i++)
+    for (
+        int i = 0;
+        i < total;
+        i++
+        )
     {
         MedidorRecursos::contarIteracion();
         const Usuario* amigo = plataforma.obtenerUsuario(indices[i]);
@@ -155,15 +167,11 @@ static void mostrarRecursos(const string& funcion, const Plataforma& plataforma,
     size_t ram = plataforma.memoriaTotalEstimada()
                  + estimarLocalesBase(duranteSesion) + memoriaLocal
                  + 2 * sizeof(void*) + 2 * sizeof(size_t);
-    cout << "\n===== Consumo de recursos: " << funcion << " =====" << endl;
+    cout << "\nConsumo de recursos: " << funcion << endl;
     cout << "Iteraciones propias directas e indirectas: "
          << MedidorRecursos::getIteraciones() << endl;
-    cout << "Memoria estimada de estructuras, objetos y variables locales: "
-         << ram << " bytes" << endl;
-    cout << "Nota: memoria aproximada; string, flujos y asignador dependen"
-         << " de la implementacion." << endl;
-    cout << "Componentes externos de apoyo: biblioteca estandar C++"
-         << " (cadenas, flujos y, cuando aplica, reloj/aleatorios)." << endl;
+    cout << "Memoria estimada: " << ram << " bytes" << endl;
+
 }
 
 int main()
@@ -299,7 +307,7 @@ int main()
 
     mostrarRecursos("carga inicial desde archivos", plataforma, 0, false);
 
-    cout << "===== Ude@Book - Inicio de sesion =====" << endl;
+    cout << "Ude@Book - Inicio de sesion" << endl;
     cout << "Usuarios cargados: " << plataforma.getCantidadUsuarios() << endl;
 
     bool terminarPrograma = false;
@@ -365,7 +373,7 @@ int main()
         do
         {
             MedidorRecursos::contarIteracion();
-            cout << "\n===== Menu de " << usuarioActivo << " =====" << endl;
+            cout << "\nMenu de " << usuarioActivo << endl;
             cout << "1. Ver mi perfil" << endl;
             cout << "2. Enviar solicitud" << endl;
             cout << "3. Ver mis solicitudes recibidas" << endl;
@@ -442,7 +450,11 @@ int main()
                 else
                 {
                     cout << "Solicitudes pendientes: " << total << endl;
-                    for (int i = 0; i < total; i++)
+                    for (
+                        int i = 0;
+                        i < total;
+                        i++
+                        )
                     {
                         MedidorRecursos::contarIteracion();
                         const SolicitudAmistad* solicitud =
@@ -525,7 +537,11 @@ int main()
             else if (opcion == "8")
             {
                 cout << "Usuarios registrados:" << endl;
-                for (int i = 0; i < plataforma.getCantidadUsuarios(); i++)
+                for (
+                    int i = 0;
+                    i < plataforma.getCantidadUsuarios();
+                    i++
+                    )
                 {
                     MedidorRecursos::contarIteracion();
                     const Usuario* usuario = plataforma.obtenerUsuario(i);
@@ -534,7 +550,8 @@ int main()
             }
             else if (opcion == "9")
             {
-                string receptor, texto;
+                string receptor;
+                string texto;
                 cout << "Quien recibe: ";
                 getline(cin, receptor);
                 cout << "Mensaje (hasta 512 caracteres): ";
@@ -566,7 +583,11 @@ int main()
                 else
                 {
                     int total = 0;
-                    for (int i = 0; i < plataforma.getCantidadMensajes(); i++)
+                    for (
+                        int i = 0;
+                        i < plataforma.getCantidadMensajes();
+                        i++
+                        )
                     {
                         MedidorRecursos::contarIteracion();
                         const Mensaje* mensaje = plataforma.obtenerMensaje(i);
@@ -602,7 +623,8 @@ int main()
             }
             else if (opcion == "11")
             {
-                string inicio, fin;
+                string inicio;
+                string fin;
                 cout << "Fecha inicio (AAAA-MM-DD): ";
                 getline(cin, inicio);
                 cout << "Fecha fin (AAAA-MM-DD): ";
@@ -620,7 +642,11 @@ int main()
                 else
                 {
                     int total = 0;
-                    for (int i = 0; i < plataforma.getCantidadMensajes(); i++)
+                    for (
+                        int i = 0;
+                        i < plataforma.getCantidadMensajes();
+                        i++
+                        )
                     {
                         MedidorRecursos::contarIteracion();
                         const Mensaje* mensaje = plataforma.obtenerMensaje(i);
@@ -651,7 +677,11 @@ int main()
                 else
                 {
                     int total = 0;
-                    for (int i = 0; i < plataforma.getCantidadMensajes(); i++)
+                    for (
+                        int i = 0;
+                        i < plataforma.getCantidadMensajes();
+                        i++
+                        )
                     {
                         MedidorRecursos::contarIteracion();
                         const Mensaje* mensaje = plataforma.obtenerMensaje(i);
@@ -703,7 +733,11 @@ int main()
                     {
                         cout << "Sugerencias encontradas: " << total << endl;
 
-                        for (int i = 0; i < total; i++)
+                        for (
+                            int i = 0;
+                            i < total;
+                            i++
+                            )
                         {
                             MedidorRecursos::contarIteracion();
                             const Usuario* sugerido =
@@ -781,7 +815,11 @@ int main()
                     int visibles = 0;
 
                     cout << "Albumes visibles de " << dueno << ":" << endl;
-                    for (int i = 0; i < amigo->getCantidadAlbumes(); i++)
+                    for (
+                        int i = 0;
+                        i < amigo->getCantidadAlbumes();
+                        i++
+                        )
                     {
                         MedidorRecursos::contarIteracion();
                         if (plataforma.puedeVerAlbum(usuarioActivo, dueno, i))
@@ -916,7 +954,11 @@ int main()
 
                     if (totalNuevas > 0)
                     {
-                        for (int i = 0; i < totalNuevas; i++)
+                        for (
+                            int i = 0;
+                            i < totalNuevas;
+                            i++
+                            )
                         {
                             MedidorRecursos::contarIteracion();
                             fotosMostradas[i] = nuevasFotos[i];
