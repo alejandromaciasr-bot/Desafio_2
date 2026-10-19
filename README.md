@@ -18,13 +18,12 @@ Funcionalidades
 - Reporte de iteraciones directas e indirectas y consumo estimado de memoria en las operaciones.
 Diseño del programa
 El sistema está organizado en seis clases principales:
-Clase	Responsabilidad
-Plataforma	Coordina usuarios, amistades, solicitudes, mensajes y persistencia.
-Usuario	Almacena los datos de cada usuario y administra sus álbumes.
-SolicitudAmistad	Representa una solicitud entre dos usuarios.
-Mensaje	Representa un mensaje, su fecha y estado de lectura.
-Album	Agrupa fotografías y establece su privacidad.
-Foto	Almacena los datos de una fotografía y administra sus likes.
+Plataforma:	Coordina usuarios, amistades, solicitudes, mensajes y persistencia.
+Usuario:	Almacena los datos de cada usuario y administra sus álbumes.
+SolicitudAmistad:	Representa una solicitud entre dos usuarios.
+Mensaje:	Representa un mensaje, su fecha y estado de lectura.
+Album:	Agrupa fotografías y establece su privacidad.
+Foto:	Almacena los datos de una fotografía y administra sus likes.
 
 
 Además, la clase auxiliar MedidorRecursos apoya el conteo de iteraciones y la estimación de memoria.
