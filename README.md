@@ -31,7 +31,7 @@ Además, la clase auxiliar MedidorRecursos apoya el conteo de iteraciones y la e
 La implementación utiliza arreglos dinámicos y punteros, incluida una matriz de adyacencia almacenada en un arreglo unidimensional de bool para representar las amistades. No se utilizan contenedores STL, struct ni herencia.
 Archivos de almacenamiento permanente
 El programa emplea cinco archivos de texto:
-Archivo	Contenido
+
 usuarios.txt	Datos personales y credenciales.
 amistades.txt	Relaciones de amistad.
 solicitudes.txt	Solicitudes de amistad pendientes.
