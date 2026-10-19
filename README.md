@@ -8,7 +8,7 @@ Ude@Book es una simulación de las funcionalidades básicas de una red social, e
 La aplicación trabaja con usuarios, amistades, solicitudes, mensajes y álbumes fotográficos. Las fotografías se representan mediante sus rutas de archivo: no se abren ni se muestran las imágenes reales.
 Funcionalidades
 - Inicio de sesión mediante nombre de usuario y contraseña.
-- Visualización de tres fotos de perfil de amigos mediante selección aleatoria ponderada, con una actualización por sesión.
+- Visualización de tres fotos de perfil de amigos mediante selección aleatoria, con una actualización por sesión.
 - Envío, consulta, aceptación y rechazo de solicitudes de amistad.
 - Consulta de relaciones de amistad y número de amigos.
 - Sugerencias de amistad ordenadas por cantidad de amigos en común (entre 1 y 20).
